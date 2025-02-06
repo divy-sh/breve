@@ -1,2 +1,5 @@
 # breve
 This repository serves as a placeholder for a minimal and fast URL shortener implemented in the golang.
+
+# TODO
+Get an initial prototype working.
