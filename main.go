@@ -15,14 +15,12 @@ var (
 	mu       sync.Mutex
 )
 
-const baseURL = "http://localhost:8080"
-
 func main() {
 	http.HandleFunc("/", serveIndex)
 	http.HandleFunc("/shorten", shortenURL)
 	http.HandleFunc("/r/", redirectURL) // Redirect handler
 
-	fmt.Println("Server running on http://localhost:8080")
+	log.Println("Server running on port 8080")
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
 
@@ -32,7 +30,7 @@ func serveIndex(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
-	tmpl := template.Must(template.ParseFiles("index.html"))
+	tmpl := template.Must(template.ParseFiles("view/index.html"))
 	tmpl.Execute(w, nil)
 }
 
@@ -55,9 +53,9 @@ func shortenURL(w http.ResponseWriter, r *http.Request) {
 	mu.Lock()
 	urlStore[shortID] = longURL
 	mu.Unlock()
-
+	originAddr := r.Header.Get("Origin")
 	// Send back a snippet to be injected into the page via HTMX
-	fmt.Fprintf(w, `<p>Shortened URL: <a href="%s/r/%s" target="_blank">%s/r/%s</a></p>`, baseURL, shortID, baseURL, shortID)
+	fmt.Fprintf(w, `<p>Shortened URL: <a href="%s/r/%s" target="_blank">%s/r/%s</a></p>`, originAddr, shortID, originAddr, shortID)
 }
 
 // Handle redirection
