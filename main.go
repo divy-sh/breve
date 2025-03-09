@@ -7,19 +7,16 @@ import (
 	"math/rand"
 	"net/http"
 	"strings"
-	"sync"
+
+	"github.com/divy-sh/animus/types"
 )
 
-var (
-	urlStore = make(map[string]string) // shortID -> longURL
-	mu       sync.Mutex
-)
+var urlStore = types.NewStringType()
 
 func main() {
 	http.HandleFunc("/", serveIndex)
 	http.HandleFunc("/shorten", shortenURL)
-	http.HandleFunc("/r/", redirectURL) // Redirect handler
-
+	http.HandleFunc("/r/", redirectURL)
 	log.Println("Server running on port 8080")
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
@@ -40,36 +37,26 @@ func shortenURL(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid request", http.StatusMethodNotAllowed)
 		return
 	}
-
 	r.ParseForm()
 	longURL := r.Form.Get("url")
 	if longURL == "" {
 		http.Error(w, "Missing URL", http.StatusBadRequest)
 		return
 	}
-
 	shortID := generateShortID()
-
-	mu.Lock()
-	urlStore[shortID] = longURL
-	mu.Unlock()
+	urlStore.Set(shortID, longURL)
 	originAddr := r.Header.Get("Origin")
-	// Send back a snippet to be injected into the page via HTMX
 	fmt.Fprintf(w, `<p>Shortened URL: <a href="%s/r/%s" target="_blank">%s/r/%s</a></p>`, originAddr, shortID, originAddr, shortID)
 }
 
 // Handle redirection
 func redirectURL(w http.ResponseWriter, r *http.Request) {
 	shortID := strings.TrimPrefix(r.URL.Path, "/r/")
-
-	mu.Lock()
-	longURL, exists := urlStore[shortID]
-	mu.Unlock()
-
-	if exists {
-		http.Redirect(w, r, longURL, http.StatusFound)
-	} else {
+	longURL, err := urlStore.Get(shortID)
+	if err != nil {
 		http.NotFound(w, r)
+	} else {
+		http.Redirect(w, r, longURL, http.StatusFound)
 	}
 }
 
