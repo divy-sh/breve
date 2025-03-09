@@ -8,10 +8,10 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/divy-sh/animus/types"
+	"github.com/divy-sh/animus/essentias"
 )
 
-var urlStore = types.NewStringType()
+var urlStore = essentias.NewStringEssentia()
 
 func main() {
 	http.HandleFunc("/", serveIndex)
