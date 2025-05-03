@@ -1,0 +1,12 @@
+ul.chat-list
+  each contact in contacts
+    li
+      a(
+        href=`/chats/${chat.id}`,
+        hx-get=`/chats/${chat.id}`,
+        hx-target='#content',
+        hx-push-url='true'
+      )= contact.name
+
+div.actions
+  a(href='/chats/new') New Chat

@@ -1,0 +1,27 @@
+doctype html
+html
+  head
+    meta(charset='UTF-8')
+    title Breve
+
+    link(rel='preconnect', href='https://fonts.googleapis.com')
+    link(rel='preconnect', href='https://fonts.gstatic.com', crossorigin)
+    link(href='https://fonts.googleapis.com/css2?family=Roboto:wght@300;400&display=swap', rel='stylesheet')
+
+    link(rel='stylesheet', href='/styles.css')
+  body
+    header
+      a(href='/breve')
+        h1 Breve
+
+    section#sidebar
+      ul.chat-list
+        each chat in chats
+          li #{chat.name}
+      div.actions
+        a(href='/chats/new') New Chat
+
+    main#content
+      p Select a chat
+
+    script(src='https://unpkg.com/htmx.org@1.9.10')
