@@ -1,11 +1,8 @@
-use std::error::Error;
-use std::path::Path;
-use candle_core::Device;
-use candle_core::quantized::gguf_file;
+pub mod generate_text;
 
 #[tauri::command]
 fn greet(name: &str) -> String {
-    format!("{}", generate_text(name))
+    format!("{}", generate_text::generate_handler(name))
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -15,9 +12,4 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![greet])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
-}
-
-fn generate_text(text: &str) -> String {
-    let model_path = Path::new("models/SmolLM-1.7B-Instruct-v0.2-IQ3_XS.gguf");
-    text.to_string()
 }
