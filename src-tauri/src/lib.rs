@@ -19,5 +19,5 @@ pub fn run() {
 
 fn generate_text(text: &str) -> String {
     let model_path = Path::new("models/SmolLM-1.7B-Instruct-v0.2-IQ3_XS.gguf");
-    name.to_string()
+    text.to_string()
 }
