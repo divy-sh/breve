@@ -13,7 +13,8 @@ pub fn generate_handler(prompt: &str) -> String {
         .create_session(SessionParams::default())
         .expect("Failed to create session");
 
-    ctx.advance_context(prompt).unwrap();
+        let formatted_prompt = format!("<|system|>Do not return any text other than your response to the user.<|user|>\n{}\n<|assistant|>\n", prompt);
+        ctx.advance_context(&formatted_prompt).unwrap();
 
     let max_tokens = 1024;
     let mut decoded_tokens = 0;
