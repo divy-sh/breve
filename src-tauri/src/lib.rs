@@ -1,8 +1,10 @@
+use tauri::Window;
+
 pub mod generate_text;
 
 #[tauri::command]
-fn greet(name: &str) -> String {
-    format!("{}", generate_text::generate_handler(name))
+fn greet(name: &str, window: Window) {
+    let _ = generate_text::generate_handler(name.to_string(), window);
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]

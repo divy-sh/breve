@@ -1,35 +1,40 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, onMounted, onUnmounted } from "vue";
 import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
 
 const greetMsg = ref("");
 const name = ref("");
+let unlisten: (() => void) | null = null;
+
+onMounted(async () => {
+  unlisten = await listen("llm-stream", (event) => {
+    greetMsg.value += event.payload as string;
+    console.log(event.payload)
+  });
+});
+
+onUnmounted(() => {
+  if (unlisten) {
+    unlisten();
+  }
+});
 
 async function greet() {
-  // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-  greetMsg.value = await invoke("greet", { name: name.value });
+  greetMsg.value = "";  
+  invoke("greet", { name: name.value })
+    .catch(error => {
+      console.error("Error invoking greet:", error);
+      greetMsg.value += `\nError: ${error}`;
+    });
+  greetMsg.value = "Processing your request...";
 }
 </script>
 
 <template>
   <main class="container">
-    <h1>Welcome to Tauri + Vue</h1>
-
-    <div class="row">
-      <a href="https://vitejs.dev" target="_blank">
-        <img src="/vite.svg" class="logo vite" alt="Vite logo" />
-      </a>
-      <a href="https://tauri.app" target="_blank">
-        <img src="/tauri.svg" class="logo tauri" alt="Tauri logo" />
-      </a>
-      <a href="https://vuejs.org/" target="_blank">
-        <img src="./assets/vue.svg" class="logo vue" alt="Vue logo" />
-      </a>
-    </div>
-    <p>Click on the Tauri, Vite, and Vue logos to learn more.</p>
-
     <form class="row" @submit.prevent="greet">
-      <input id="greet-input" v-model="name" placeholder="Enter a name..." />
+      <input id="greet-input" v-model="name" placeholder="Enter a prompt..." />
       <button type="submit">Greet</button>
     </form>
     <p>{{ greetMsg }}</p>
@@ -40,22 +45,19 @@ async function greet() {
 .logo.vite:hover {
   filter: drop-shadow(0 0 2em #747bff);
 }
-
 .logo.vue:hover {
   filter: drop-shadow(0 0 2em #249b73);
 }
-
 </style>
+
 <style>
 :root {
   font-family: Inter, Avenir, Helvetica, Arial, sans-serif;
   font-size: 16px;
   line-height: 24px;
   font-weight: 400;
-
   color: #0f0f0f;
   background-color: #f6f6f6;
-
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -123,6 +125,7 @@ button {
 button:hover {
   border-color: #396cd8;
 }
+
 button:active {
   border-color: #396cd8;
   background-color: #e8e8e8;
@@ -152,9 +155,9 @@ button {
     color: #ffffff;
     background-color: #0f0f0f98;
   }
+
   button:active {
     background-color: #0f0f0f69;
   }
 }
-
 </style>
