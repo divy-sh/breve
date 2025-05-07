@@ -35,20 +35,11 @@ async function greet() {
   <main class="container">
     <form class="row" @submit.prevent="greet">
       <input id="greet-input" v-model="name" placeholder="Enter a prompt..." />
-      <button type="submit">Greet</button>
+      <button type="submit">Send</button>
     </form>
   </main>
   <pre>{{ greetMsg }}</pre>
 </template>
-
-<style scoped>
-.logo.vite:hover {
-  filter: drop-shadow(0 0 2em #747bff);
-}
-.logo.vue:hover {
-  filter: drop-shadow(0 0 2em #249b73);
-}
-</style>
 
 <style>
 :root {
@@ -72,17 +63,6 @@ async function greet() {
   flex-direction: column;
   justify-content: center;
   text-align: center;
-}
-
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: 0.75s;
-}
-
-.logo.tauri:hover {
-  filter: drop-shadow(0 0 2em #24c8db);
 }
 
 .row {
@@ -160,4 +140,11 @@ button {
     background-color: #0f0f0f69;
   }
 }
+
+pre {
+  font-size: 1em; 
+  white-space: pre-wrap; 
+  max-width: 100%;
+}
+
 </style>
