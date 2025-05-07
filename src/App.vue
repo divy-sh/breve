@@ -27,7 +27,7 @@ async function greet() {
       console.error("Error invoking greet:", error);
       greetMsg.value += `\nError: ${error}`;
     });
-  greetMsg.value = "Processing your request...";
+  greetMsg.value = "";
 }
 </script>
 
@@ -37,8 +37,8 @@ async function greet() {
       <input id="greet-input" v-model="name" placeholder="Enter a prompt..." />
       <button type="submit">Greet</button>
     </form>
-    <p>{{ greetMsg }}</p>
   </main>
+  <pre>{{ greetMsg }}</pre>
 </template>
 
 <style scoped>

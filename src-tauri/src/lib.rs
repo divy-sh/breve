@@ -3,8 +3,9 @@ use tauri::Window;
 pub mod generate_text;
 
 #[tauri::command]
-fn greet(name: &str, window: Window) {
+async fn greet(name: &str, window: Window) -> Result<(), String> {
     let _ = generate_text::generate_handler(name.to_string(), window);
+    Ok(())
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
