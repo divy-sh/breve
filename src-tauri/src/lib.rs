@@ -1,5 +1,6 @@
 use tauri::Window;
 
+pub mod models;
 pub mod generate_text;
 
 #[tauri::command]
