@@ -22,7 +22,7 @@ onUnmounted(() => {
 
 async function greet() {
   greetMsg.value = "";  
-  invoke("greet", { name: name.value })
+  invoke("start_conversation", { title: name.value, userMessage: name.value })
     .catch(error => {
       console.error("Error invoking greet:", error);
       greetMsg.value += `\nError: ${error}`;
