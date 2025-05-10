@@ -52,7 +52,6 @@ export function useConversations() {
     try {
       const convId = await invoke("start_conversation", {
         title: message.substring(0, 30),
-        userMessage: message
       }) as string;
       
       // Load the new conversation after creation

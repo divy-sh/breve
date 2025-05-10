@@ -10,13 +10,11 @@ pub mod models;
 #[tauri::command]
 async fn start_conversation(
     title: String,
-    user_message: String,
-    window: Window,
     state: State<'_, Mutex<ConversationController>>,
 ) -> Result<String, String> {
     let mut controller = state.lock().unwrap();
     controller
-        .start_new_conversation(&title, &user_message, window)
+        .start_new_conversation(&title)
         .map_err(|e| e.to_string())
 }
 

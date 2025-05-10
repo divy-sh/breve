@@ -34,7 +34,6 @@ let unlisten: (() => void) | null = null;
 // Setup event listener for LLM streaming responses
 onMounted(async () => {
   unlisten = await listen("llm-stream", (event) => {
-    console.log(event.payload)
     currentStreamingContent.value += event.payload as string;
   });
   
@@ -88,6 +87,7 @@ async function handleSendMessage(message: string) {
       await continueConversation(currentConversation.value.id, message);
     } else {
       await startNewConversation(message);
+      await continueConversation(currentConversation.value.id, message);
     }
   } catch (error) {
     console.error("Error sending message:", error);
