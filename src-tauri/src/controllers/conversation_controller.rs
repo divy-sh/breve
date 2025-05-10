@@ -10,7 +10,7 @@ use uuid::Uuid;
 
 pub struct ConversationController {
     dao: ConversationDao,
-    inference: Inference
+    inference: Inference,
 }
 
 impl ConversationController {
@@ -27,7 +27,6 @@ impl ConversationController {
         }
     }
 
-
     pub fn get_conversation_ids(&self) -> Vec<String> {
         if let Ok(conversation_ids) = self.dao.get_conversation_ids() {
             return conversation_ids;
@@ -43,7 +42,12 @@ impl ConversationController {
         Ok(id)
     }
 
-    pub fn continue_conversation(&mut self, conv_id: &str, user_input: &str, window: Window) -> Result<Option<String>> {
+    pub fn continue_conversation(
+        &mut self,
+        conv_id: &str,
+        user_input: &str,
+        window: Window,
+    ) -> Result<Option<String>> {
         if let Some(mut conversation) = self.dao.get_conversation(conv_id)? {
             conversation.add_message("user", user_input);
 

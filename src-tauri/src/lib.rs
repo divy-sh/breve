@@ -32,9 +32,7 @@ async fn continue_conversation(
 }
 
 #[tauri::command]
-fn get_conversation_ids(
-    state: State<'_, Mutex<ConversationController>>,
-) -> Vec<String> {
+fn get_conversation_ids(state: State<'_, Mutex<ConversationController>>) -> Vec<String> {
     let controller = state.lock().unwrap();
     controller.get_conversation_ids()
 }
@@ -45,7 +43,9 @@ fn get_conversation(
     state: State<'_, Mutex<ConversationController>>,
 ) -> Result<Option<models::conversation::Conversation>, String> {
     let controller = state.lock().unwrap();
-    controller.get_conversation(&conv_id).map_err(|e| e.to_string())
+    controller
+        .get_conversation(&conv_id)
+        .map_err(|e| e.to_string())
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]

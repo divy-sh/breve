@@ -83,9 +83,7 @@ export function useConversations() {
       });
       
       // Wait for streaming to complete and refresh conversation
-      setTimeout(async () => {
-        await loadConversation(conversationId);
-      }, 100);
+      await loadConversation(conversationId);
     } catch (error) {
       console.error("Error continuing conversation:", error);
       throw error;

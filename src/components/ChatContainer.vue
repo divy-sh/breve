@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { computed } from 'vue';
 import MessageList from './MessageList.vue';
 import MessageInput from './MessageInput.vue';
 import type { Conversation } from '../types';
@@ -17,10 +16,6 @@ const emit = defineEmits<{
   (e: 'send-message', message: string): void;
 }>();
 
-// Computed
-const title = computed(() => {
-  return conversation?.value?.title || 'New Conversation';
-});
 </script>
 
 <template>
@@ -55,6 +50,7 @@ const title = computed(() => {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  background-color: #080808;
 }
 
 .top-bar {
@@ -62,6 +58,7 @@ const title = computed(() => {
   border-bottom: 1px solid var(--border-color);
   display: flex;
   align-items: center;
+  color: white;
 }
 
 .top-bar h1 {

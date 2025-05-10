@@ -13,7 +13,8 @@ impl ConversationDao {
             "CREATE TABLE IF NOT EXISTS conversations (
                 id TEXT PRIMARY KEY,
                 title TEXT NOT NULL,
-                body TEXT NOT NULL
+                body TEXT NOT NULL,
+                lastUpdated TEXT NOT NULL
             )",
             [],
         )?;
@@ -24,7 +25,7 @@ impl ConversationDao {
         let body_json = serde_json::to_string(&conv.body)
             .map_err(|e| rusqlite::Error::ToSqlConversionFailure(Box::new(e)))?;
         self.conn.execute(
-            "INSERT INTO conversations (id, title, body) VALUES (?1, ?2, ?3)",
+            "INSERT INTO conversations (id, title, body, lastUpdated) VALUES (?1, ?2, ?3, DATETIME('now'))",
             params![conv.id, conv.title, body_json],
         )?;
         Ok(())
@@ -34,7 +35,7 @@ impl ConversationDao {
         let body_json = serde_json::to_string(&conv.body)
             .map_err(|e| rusqlite::Error::ToSqlConversionFailure(Box::new(e)))?;
         self.conn.execute(
-            "UPDATE conversations SET title = ?1, body = ?2 WHERE id = ?3",
+            "UPDATE conversations SET title = ?1, body = ?2, lastUpdated = DATETIME('now') WHERE id = ?3",
             params![conv.title, body_json, conv.id],
         )?;
         Ok(())
@@ -66,7 +67,9 @@ impl ConversationDao {
     }
 
     pub fn get_conversation_ids(&self) -> Result<Vec<String>> {
-        let mut stmt = self.conn.prepare("SELECT id FROM conversations")?;
+        let mut stmt = self
+            .conn
+            .prepare("SELECT id, lastUpdated FROM conversations order by lastUpdated DESC")?;
         let ids = stmt
             .query_map([], |row| row.get(0))?
             .collect::<Result<Vec<String>, _>>()?;

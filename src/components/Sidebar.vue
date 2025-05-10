@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { inject } from 'vue';
 import type { ConversationSummary } from '../types';
 
 // Props
@@ -63,6 +62,7 @@ const emit = defineEmits<{
   align-items: center;
   padding: 1rem;
   border-bottom: 1px solid var(--border-color);
+  color: white;
 }
 
 .new-chat-btn {

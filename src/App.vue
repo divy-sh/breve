@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, provide } from "vue";
-import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 
 import Sidebar from "./components/Sidebar.vue";
@@ -8,7 +7,6 @@ import ChatContainer from "./components/ChatContainer.vue";
 import { useConversations } from "./composables/useConversations";
 
 // Types
-import type { Conversation } from "./types";
 
 // State
 const darkMode = ref(window.matchMedia('(prefers-color-scheme: dark)').matches);
