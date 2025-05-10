@@ -1,150 +1,198 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from "vue";
+import { ref, onMounted, onUnmounted, provide } from "vue";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 
-const greetMsg = ref("");
-const name = ref("");
+import Sidebar from "./components/Sidebar.vue";
+import ChatContainer from "./components/ChatContainer.vue";
+import { useConversations } from "./composables/useConversations";
+
+// Types
+import type { Conversation } from "./types";
+
+// State
+const darkMode = ref(window.matchMedia('(prefers-color-scheme: dark)').matches);
+const sidebarOpen = ref(window.innerWidth > 768);
+
+// Use composable for conversation management
+const { 
+  conversations, 
+  currentConversation, 
+  loadConversations, 
+  loadConversation, 
+  startNewConversation,
+  continueConversation
+} = useConversations();
+
+// Streaming state
+const currentStreamingContent = ref("");
+const isLoading = ref(false);
+
+// Unlisten function for the event listener
 let unlisten: (() => void) | null = null;
 
+// Setup event listener for LLM streaming responses
 onMounted(async () => {
   unlisten = await listen("llm-stream", (event) => {
-    greetMsg.value += event.payload as string;
     console.log(event.payload)
+    currentStreamingContent.value += event.payload as string;
   });
+  
+  // Load conversation list
+  await loadConversations();
+  
+  // Listen for dark mode changes
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+    darkMode.value = e.matches;
+  });
+  
+  // Listen for window resize
+  window.addEventListener('resize', handleResize);
 });
 
 onUnmounted(() => {
   if (unlisten) {
     unlisten();
   }
+  window.removeEventListener('resize', handleResize);
 });
 
-async function greet() {
-  greetMsg.value = "";  
-  invoke("start_conversation", { title: name.value, userMessage: name.value })
-    .catch(error => {
-      console.error("Error invoking greet:", error);
-      greetMsg.value += `\nError: ${error}`;
-    });
-  greetMsg.value = "";
+function handleResize() {
+  if (window.innerWidth <= 768) {
+    sidebarOpen.value = false;
+  }
 }
+
+// Toggle sidebar
+function toggleSidebar() {
+  sidebarOpen.value = !sidebarOpen.value;
+}
+
+// Create new chat
+function createNewChat() {
+  currentConversation.value = null;
+  if (window.innerWidth <= 768) {
+    sidebarOpen.value = false;
+  }
+}
+
+// Handle sending messages
+async function handleSendMessage(message: string) {
+  if (!message.trim()) return;
+  
+  isLoading.value = true;
+  currentStreamingContent.value = "";
+  
+  try {
+    if (currentConversation.value) {
+      await continueConversation(currentConversation.value.id, message);
+    } else {
+      await startNewConversation(message);
+    }
+  } catch (error) {
+    console.error("Error sending message:", error);
+  } finally {
+    isLoading.value = false;
+  }
+}
+
+// Make key functions and state available to child components
+provide('darkMode', darkMode);
+provide('isLoading', isLoading);
+provide('currentStreamingContent', currentStreamingContent);
+provide('handleSendMessage', handleSendMessage);
 </script>
 
 <template>
-  <main class="container">
-    <form class="row" @submit.prevent="greet">
-      <input id="greet-input" v-model="name" placeholder="Enter a prompt..." />
-      <button type="submit">Send</button>
-    </form>
-  </main>
-  <pre>{{ greetMsg }}</pre>
+  <div class="app-container" :class="{ 'dark-mode': darkMode }">
+    <!-- Sidebar component -->
+    <Sidebar 
+      :conversations="conversations" 
+      :currentConversationId="currentConversation?.id"
+      :isOpen="sidebarOpen"
+      @toggle="toggleSidebar"
+      @load-conversation="loadConversation"
+      @create-new="createNewChat"
+    />
+    
+    <!-- Main chat container -->
+    <ChatContainer
+      :conversation="currentConversation"
+      :isLoading="isLoading"
+      :streamingContent="currentStreamingContent"
+      @toggle-sidebar="toggleSidebar"
+      @send-message="handleSendMessage"
+    />
+  </div>
 </template>
 
 <style>
 :root {
-  font-family: Inter, Avenir, Helvetica, Arial, sans-serif;
+  --primary-color: #3b82f6;
+  --primary-hover: #2563eb;
+  --bg-color: #f8fafc;
+  --text-color: #1e293b;
+  --border-color: #e2e8f0;
+  --sidebar-bg: #f1f5f9;
+  --message-user-bg: #e0f2fe;
+  --message-assistant-bg: #f8fafc;
+  --input-bg: #ffffff;
+  --shadow-color: rgba(0, 0, 0, 0.05);
+  
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   font-size: 16px;
-  line-height: 24px;
-  font-weight: 400;
-  color: #0f0f0f;
-  background-color: #f6f6f6;
-  font-synthesis: none;
+  line-height: 1.5;
+  color: var(--text-color);
+  background-color: var(--bg-color);
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  -webkit-text-size-adjust: 100%;
 }
 
-.container {
+* {
   margin: 0;
-  padding-top: 10vh;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.app-container {
   display: flex;
-  flex-direction: column;
-  justify-content: center;
-  text-align: center;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
 }
 
-.row {
-  display: flex;
-  justify-content: center;
+/* Dark mode styles */
+.dark-mode {
+  --primary-color: #60a5fa;
+  --primary-hover: #93c5fd;
+  --bg-color: #0f172a;
+  --text-color: #f1f5f9;
+  --border-color: #334155;
+  --sidebar-bg: #1e293b;
+  --message-user-bg: #1e40af;
+  --message-assistant-bg: #1e293b;
+  --input-bg: #1e293b;
+  --shadow-color: rgba(0, 0, 0, 0.3);
 }
 
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-
-a:hover {
-  color: #535bf2;
-}
-
-h1 {
-  text-align: center;
-}
-
-input,
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  color: #0f0f0f;
-  background-color: #ffffff;
-  transition: border-color 0.25s;
-  box-shadow: 0 2px 2px rgba(0, 0, 0, 0.2);
-}
-
-button {
-  cursor: pointer;
-}
-
-button:hover {
-  border-color: #396cd8;
-}
-
-button:active {
-  border-color: #396cd8;
-  background-color: #e8e8e8;
-}
-
-input,
-button {
-  outline: none;
-}
-
-#greet-input {
-  margin-right: 5px;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    color: #f6f6f6;
-    background-color: #2f2f2f;
+@media (max-width: 768px) {
+  .desktop-hidden {
+    display: initial;
   }
-
-  a:hover {
-    color: #24c8db;
-  }
-
-  input,
-  button {
-    color: #ffffff;
-    background-color: #0f0f0f98;
-  }
-
-  button:active {
-    background-color: #0f0f0f69;
+  
+  .mobile-only {
+    display: initial;
   }
 }
 
-pre {
-  font-size: 1em; 
-  white-space: pre-wrap; 
-  max-width: 100%;
+@media (min-width: 769px) {
+  .desktop-hidden {
+    display: none;
+  }
+  
+  .mobile-only {
+    display: none;
+  }
 }
-
 </style>
