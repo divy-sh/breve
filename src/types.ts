@@ -1,13 +1,12 @@
 export interface Message {
-  role: 'user' | 'assistant';
+  role: 'system' | 'user' | 'assistant';
   content: string;
 }
 
 export interface Conversation {
   id: string;
   title: string;
-  messages: Message[];
-  createdAt?: string;  // Optional timestamp
+  body: Message[];
 }
 
 export interface ConversationSummary {

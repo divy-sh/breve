@@ -2,7 +2,7 @@
 import { ref } from 'vue';
 
 // Props
-defineProps<{
+const props = defineProps<{
   isLoading: boolean;
 }>();
 

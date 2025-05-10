@@ -71,7 +71,7 @@ export function useConversations() {
     try {
       // Add user message to UI immediately for better responsiveness
       if (currentConversation.value && currentConversation.value.id === conversationId) {
-        currentConversation.value.messages.push({
+        currentConversation.value.body.push({
           role: 'user',
           content: message
         });

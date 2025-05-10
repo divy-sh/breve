@@ -2,23 +2,17 @@
 import { computed, ref, onMounted, watch } from 'vue';
 import type { Conversation, Message } from '../types';
 
-// Props
 const props = defineProps<{
   conversation: Conversation | null;
   streamingContent: string;
   isLoading: boolean;
 }>();
 
-// Refs
 const messagesContainer = ref<HTMLDivElement | null>(null);
 
-// Computed properties
 const messages = computed(() => {
-  if (!props.conversation) return [];
-  
-  const allMessages = [...props.conversation.messages];
-  
-  // Add streaming message if there is content
+  if (!props.conversation || !props.conversation.body) return [];
+  const allMessages = [...props.conversation.body];
   if (props.streamingContent && props.isLoading) {
     allMessages.push({
       role: 'assistant',
@@ -29,9 +23,8 @@ const messages = computed(() => {
   return allMessages;
 });
 
-// Auto-scroll to bottom when new messages are added
 function scrollToBottom() {
-  if (messagesContainer.value) {
+  if (messagesContainer?.value) {
     setTimeout(() => {
       if (messagesContainer.value) {
         messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight;
@@ -40,8 +33,7 @@ function scrollToBottom() {
   }
 }
 
-// Watch for changes that should trigger a scroll
-watch(() => props.conversation?.messages.length, scrollToBottom);
+watch(() => props.conversation?.body?.length, scrollToBottom);
 watch(() => props.streamingContent, scrollToBottom);
 
 onMounted(scrollToBottom);
@@ -49,8 +41,8 @@ onMounted(scrollToBottom);
 
 <template>
   <div class="messages-container" ref="messagesContainer">
-    <div v-if="!conversation" class="welcome-screen">
-      <h2>Welcome to your LLM Chat Application</h2>
+    <div v-if="!props.conversation" class="welcome-screen">
+      <h2>Hello There!</h2>
       <p>Start a new conversation by typing a message below.</p>
     </div>
     
@@ -62,7 +54,7 @@ onMounted(scrollToBottom);
         :class="message.role"
       >
         <div class="message-header">
-          <span class="message-role">{{ message.role === 'user' ? 'You' : 'Assistant' }}</span>
+          <span class="message-role">{{ message.role === 'user' ? 'You' : 'Breve' }}</span>
         </div>
         <div class="message-content">{{ message.content }}</div>
       </div>
@@ -112,6 +104,7 @@ onMounted(scrollToBottom);
   background-color: var(--message-assistant-bg);
   align-self: flex-start;
   border: 1px solid var(--border-color);
+  color: white;
 }
 
 .message-header {
