@@ -1,7 +1,7 @@
 use std::fmt::Error;
 
 use crate::models::conversation::{Conversation, Message};
-use rusqlite::{params, Connection, Result};
+use rusqlite::{Connection, Result, params};
 use serde_json;
 
 pub struct ConversationDao {
@@ -79,15 +79,17 @@ impl ConversationDao {
     }
 
     pub fn delete_conversation(&self, id: &str) -> Result<String, Error> {
-        if let Ok(deleted) = self.conn.execute("DELETE FROM conversations where id = ?1", params![id]) {
+        if let Ok(deleted) = self
+            .conn
+            .execute("DELETE FROM conversations where id = ?1", params![id])
+        {
             if deleted <= 0 {
                 return Err(Error);
             } else {
-                
             }
         } else {
             return Err(Error);
         }
-        return Ok("delete successful".to_string())
+        return Ok("delete successful".to_string());
     }
 }

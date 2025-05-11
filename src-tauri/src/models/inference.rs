@@ -5,7 +5,9 @@ use llama_cpp_2::model::LlamaModel;
 use llama_cpp_2::model::params::LlamaModelParams;
 use llama_cpp_2::model::{AddBos, Special};
 use llama_cpp_2::sampling::LlamaSampler;
+use llama_cpp_2::token::LlamaToken;
 use std::io::Write;
+use std::num::NonZero;
 use tauri::{Emitter, Window};
 
 use super::conversation::Conversation;
@@ -13,6 +15,9 @@ use super::conversation::Conversation;
 pub struct Inference {
     pub model: LlamaModel,
     pub backend: LlamaBackend,
+    pub batch_size: i32,
+    pub max_context_length: i32,
+    pub max_output_length: i32,
 }
 
 impl Inference {
@@ -20,65 +25,41 @@ impl Inference {
         let backend = LlamaBackend::init().unwrap();
         let model = LlamaModel::load_from_file(
             &backend,
-            "./src/models/Llama-3.2-3B-Instruct-Q4_K_L.gguf",
+            "./src/models/Llama-3.2-3B-Instruct.Q4_K_M.gguf",
             &LlamaModelParams::default(),
         )
         .map_err(|e| {
             eprintln!("Model load error: {:?}", e);
             format!("Model load error: {:?}", e)
         })?;
+        
+        // TODO calculate context and batch size based on available memory
         return Ok(Inference {
             model: model,
             backend: backend,
+            batch_size: 20480,
+            max_context_length: 20480 - 2048,
+            max_output_length: 2048,
         });
     }
 
     pub fn generate_text(&mut self, conv: &Conversation, window: Window) -> Result<String, String> {
-        let ctx_params = LlamaContextParams::default();
+        let ctx_params = LlamaContextParams::default()
+            .with_n_batch(self.batch_size.try_into().unwrap())
+            .with_n_ctx(Some(
+                NonZero::try_from(self.max_context_length as u32).unwrap(),
+            ));
         let mut ctx = self
             .model
             .new_context(&self.backend, ctx_params)
             .map_err(|e| format!("Session creation error: {:?}", e))?;
 
-        let system_prompt = "You are an AI assistant named Breve, designed to respond to user queries efficiently and accurately.";
-        let mut formatted_prompt = format!(
-            "<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n\n{}\n<|eot_id|>",
-            system_prompt
-        );
-
-        for msg in &conv.body {
-            formatted_prompt.push_str(&format!(
-                "<|start_header_id|>{}<|end_header_id|>\n\n{}\n<|eot_id|>",
-                msg.role, msg.content
-            ));
-        }
-
-        formatted_prompt.push_str("<|start_header_id|>assistant<|end_header_id|>\n\n");
-        let mut tokens_list = self
-            .model
-            .str_to_token(&formatted_prompt, AddBos::Always)
-            .map_err(|e| format!("Tokenization failed: {:?}", e))?;
-
-        let max_ctx: i32 = 2048;
-        let max_output_tokens = 512;
-        let max_input_tokens = max_ctx.saturating_sub(max_output_tokens);
-
-        if tokens_list.len() as i32 > max_input_tokens {
-            tokens_list = tokens_list[tokens_list.len() - max_input_tokens as usize..].to_vec();
-            eprintln!(
-                "Prompt was too long ({} tokens); trimmed to {} tokens.",
-                formatted_prompt.len(),
-                tokens_list.len()
-            );
-        }
-
-        let mut batch = LlamaBatch::new(512, 8);
+        let mut batch = LlamaBatch::new(self.batch_size as usize, 8);
+        let tokens_list = self.format_prompt(conv);
         let last_index = tokens_list.len() as i32 - 1;
+
         for (i, token) in (0_i32..).zip(tokens_list.into_iter()) {
-            let is_last = i == last_index;
-            batch.add(token, i, &[0], is_last).map_err(|e| {
-            format!("Batch size full: {:?}", e)
-        })?;
+            batch.add(token, i, &[0], i == last_index).unwrap();
         }
 
         if let Err(e) = ctx.decode(&mut batch) {
@@ -89,12 +70,10 @@ impl Inference {
         let mut decoder = encoding_rs::UTF_8.new_decoder();
         let mut sampler = LlamaSampler::greedy();
         let mut message = String::new();
-        println!("prompt: {}",formatted_prompt);
-        while n_cur <= max_ctx && (n_cur - batch.n_tokens()) < max_output_tokens {
+        while n_cur <= self.batch_size && (n_cur - batch.n_tokens()) <= self.max_output_length {
             let token = sampler.sample(&ctx, batch.n_tokens() - 1);
             sampler.accept(token);
             if token == self.model.token_eos() {
-                eprintln!("End of sequence token reached.");
                 break;
             }
             let output_bytes = self.model.token_to_bytes(token, Special::Tokenize).unwrap();
@@ -119,5 +98,43 @@ impl Inference {
             }
         }
         Ok(message)
+    }
+
+    pub fn format_prompt(&self, conv: &Conversation) -> Vec<LlamaToken> {
+        let system_prompt = "You are an AI assistant named Breve, 
+        designed to respond to user queries efficiently and accurately. 
+        Answer as concisely as possible, without making up fact, or hallucinating.";
+        let mut formatted_prompt = format!(
+            "<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n{}\n<|eot_id|>",
+            system_prompt
+        );
+        let end_str = "<|start_header_id|>assistant<|end_header_id|>\n";
+        let mut message_segments = Vec::new();
+        let mut total_len = formatted_prompt.len() + end_str.len();
+
+        for msg in conv.body.iter().rev() {
+            let segment = format!(
+                "<|start_header_id|>{}<|end_header_id|>\n{}\n<|eot_id|>",
+                msg.role, msg.content
+            );
+
+            if total_len + segment.len() < self.max_context_length.try_into().unwrap() {
+                total_len += segment.len();
+                message_segments.push(segment);
+            } else {
+                break;
+            }
+        }
+
+        message_segments.reverse();
+        for segment in message_segments {
+            formatted_prompt.push_str(&segment);
+        }
+
+        formatted_prompt.push_str(&end_str);
+        self.model
+            .str_to_token(&formatted_prompt, AddBos::Always)
+            .map_err(|e| format!("Tokenization failed: {:?}", e))
+            .unwrap()
     }
 }
