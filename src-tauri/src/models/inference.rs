@@ -20,7 +20,7 @@ impl Inference {
         let backend = LlamaBackend::init().unwrap();
         let model = LlamaModel::load_from_file(
             &backend,
-            "./models/smollm2-1.7b-instruct-q4_k_m.gguf",
+            "./src/models/Llama-3.2-3B-Instruct-Q4_K_L.gguf",
             &LlamaModelParams::default(),
         )
         .map_err(|e| {
@@ -44,7 +44,7 @@ impl Inference {
             })?;
 
         let mut formatted_prompt = String::from(
-            "<|im_start|>system\nYou are an AI chatbot, 
+            "<|im_start|>system\nYou are an AI chatbot named Breve, 
         respond to user's queries efficiently. Do not hallucinate<|im_end|>\n",
         );
 
@@ -52,7 +52,7 @@ impl Inference {
             .body
             .iter()
             .rev()
-            .take(2)
+            .take(20)
             .collect::<Vec<&Message>>()
             .into_iter()
             .rev()
