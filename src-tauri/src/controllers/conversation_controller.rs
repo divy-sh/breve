@@ -1,3 +1,4 @@
+use std::fmt::Error;
 use std::vec;
 
 use crate::dao::conversation_dao::ConversationDao;
@@ -66,5 +67,9 @@ impl ConversationController {
 
     pub fn get_conversation(&self, id: &str) -> Result<Option<Conversation>> {
         self.dao.get_conversation(id)
+    }
+
+    pub fn delete_conversation(&self, id: &str) -> Result<String, Error> {
+        self.dao.delete_conversation(id)
     }
 }

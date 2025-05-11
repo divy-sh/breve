@@ -1,14 +1,14 @@
 use llama_cpp_2::context::params::LlamaContextParams;
 use llama_cpp_2::llama_backend::LlamaBackend;
 use llama_cpp_2::llama_batch::LlamaBatch;
-use llama_cpp_2::model::params::LlamaModelParams;
 use llama_cpp_2::model::LlamaModel;
+use llama_cpp_2::model::params::LlamaModelParams;
 use llama_cpp_2::model::{AddBos, Special};
 use llama_cpp_2::sampling::LlamaSampler;
 use std::io::Write;
 use tauri::{Emitter, Window};
 
-use super::conversation::{Conversation, Message};
+use super::conversation::Conversation;
 
 pub struct Inference {
     pub model: LlamaModel,
@@ -38,74 +38,85 @@ impl Inference {
         let mut ctx = self
             .model
             .new_context(&self.backend, ctx_params)
-            .map_err(|e| {
-                eprintln!("Session creation error: {:?}", e);
-                format!("Session creation error: {:?}", e)
-            })?;
+            .map_err(|e| format!("Session creation error: {:?}", e))?;
 
-        let mut formatted_prompt = String::from(
-            "<|im_start|>system\nYou are an AI chatbot named Breve, 
-        respond to user's queries efficiently. Do not hallucinate<|im_end|>\n",
+        let system_prompt = "You are an AI assistant named Breve, designed to respond to user queries efficiently and accurately.";
+        let mut formatted_prompt = format!(
+            "<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n\n{}\n<|eot_id|>",
+            system_prompt
         );
 
-        let recent_messages: Vec<&Message> = conv
-            .body
-            .iter()
-            .rev()
-            .take(20)
-            .collect::<Vec<&Message>>()
-            .into_iter()
-            .rev()
-            .collect();
-        for msg in recent_messages {
+        for msg in &conv.body {
             formatted_prompt.push_str(&format!(
-                "<|im_start|>{}\n{}<|im_end|>\n",
+                "<|start_header_id|>{}<|end_header_id|>\n\n{}\n<|eot_id|>",
                 msg.role, msg.content
             ));
         }
 
-        formatted_prompt.push_str("<|im_start|>assistant\n");
-        let tokens_list = self
+        formatted_prompt.push_str("<|start_header_id|>assistant<|end_header_id|>\n\n");
+        let mut tokens_list = self
             .model
             .str_to_token(&formatted_prompt, AddBos::Always)
-            .map_err(|e| {
-                eprintln!("Advance context error: {:?}", e);
-                format!("Advance context error: {:?}", e)
-            })?;
+            .map_err(|e| format!("Tokenization failed: {:?}", e))?;
 
-        let n_len = 1024;
-        let mut batch = LlamaBatch::new(512, 1);
+        let max_ctx: i32 = 2048;
+        let max_output_tokens = 512;
+        let max_input_tokens = max_ctx.saturating_sub(max_output_tokens);
+
+        if tokens_list.len() as i32 > max_input_tokens {
+            tokens_list = tokens_list[tokens_list.len() - max_input_tokens as usize..].to_vec();
+            eprintln!(
+                "Prompt was too long ({} tokens); trimmed to {} tokens.",
+                formatted_prompt.len(),
+                tokens_list.len()
+            );
+        }
+
+        let mut batch = LlamaBatch::new(512, 8);
         let last_index = tokens_list.len() as i32 - 1;
         for (i, token) in (0_i32..).zip(tokens_list.into_iter()) {
             let is_last = i == last_index;
-            batch.add(token, i, &[0], is_last).unwrap();
+            batch.add(token, i, &[0], is_last).map_err(|e| {
+            format!("Batch size full: {:?}", e)
+        })?;
         }
 
-        ctx.decode(&mut batch).expect("llama_decode() failed");
+        if let Err(e) = ctx.decode(&mut batch) {
+            return Err(format!("Initial decode failed: {:?}", e));
+        }
+
         let mut n_cur = batch.n_tokens();
         let mut decoder = encoding_rs::UTF_8.new_decoder();
         let mut sampler = LlamaSampler::greedy();
         let mut message = String::new();
-
-        while n_cur <= n_len {
+        println!("prompt: {}",formatted_prompt);
+        while n_cur <= max_ctx && (n_cur - batch.n_tokens()) < max_output_tokens {
             let token = sampler.sample(&ctx, batch.n_tokens() - 1);
             sampler.accept(token);
             if token == self.model.token_eos() {
-                eprintln!();
+                eprintln!("End of sequence token reached.");
                 break;
             }
             let output_bytes = self.model.token_to_bytes(token, Special::Tokenize).unwrap();
             let mut output_string = String::with_capacity(32);
-            let _decode_result = decoder.decode_to_string(&output_bytes, &mut output_string, false);
+            let _ = decoder.decode_to_string(&output_bytes, &mut output_string, false);
             message += &output_string;
             if let Err(e) = window.emit("llm-stream", output_string.clone()) {
                 eprintln!("Emit error: {:?}", e);
             }
             let _ = std::io::stdout().flush();
             batch.clear();
-            batch.add(token, n_cur, &[0], true).unwrap();
+
+            if let Err(e) = batch.add(token, n_cur, &[0], true) {
+                eprintln!("Batch add error: {:?}", e);
+                break;
+            }
             n_cur += 1;
-            ctx.decode(&mut batch).expect("failed to eval");
+
+            if let Err(e) = ctx.decode(&mut batch) {
+                eprintln!("Decode failed at n_cur = {}: {:?}", n_cur, e);
+                break;
+            }
         }
         Ok(message)
     }

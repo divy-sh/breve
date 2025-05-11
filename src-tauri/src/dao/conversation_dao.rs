@@ -1,3 +1,5 @@
+use std::fmt::Error;
+
 use crate::models::conversation::{Conversation, Message};
 use rusqlite::{params, Connection, Result};
 use serde_json;
@@ -74,5 +76,18 @@ impl ConversationDao {
             .query_map([], |row| row.get(0))?
             .collect::<Result<Vec<String>, _>>()?;
         Ok(ids)
+    }
+
+    pub fn delete_conversation(&self, id: &str) -> Result<String, Error> {
+        if let Ok(deleted) = self.conn.execute("DELETE FROM conversations where id = ?1", params![id]) {
+            if deleted <= 0 {
+                return Err(Error);
+            } else {
+                
+            }
+        } else {
+            return Err(Error);
+        }
+        return Ok("delete successful".to_string())
     }
 }
