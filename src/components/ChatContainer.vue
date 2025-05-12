@@ -50,7 +50,7 @@ const emit = defineEmits<{
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  background-color: #080808;
+  background-color: #1e293b;
 }
 
 .top-bar {

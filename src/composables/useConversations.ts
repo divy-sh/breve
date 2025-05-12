@@ -90,12 +90,28 @@ export function useConversations() {
     }
   }
 
+  async function deleteConversation(conversationId: string) {
+    try {
+      await invoke("delete_conversation", {
+        convId: conversationId,
+      }) as string;
+      if (conversationId === currentConversation.value?.id) {
+        currentConversation.value = null;
+      }
+      await loadConversations();
+    } catch (error) {
+      console.error("Error deleting conversation:", error);
+      throw error;
+    }
+  }
+
   return {
     conversations,
     currentConversation,
     loadConversations,
     loadConversation,
     startNewConversation,
-    continueConversation
+    continueConversation,
+    deleteConversation
   };
 }

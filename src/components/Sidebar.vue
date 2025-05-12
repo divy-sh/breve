@@ -13,6 +13,7 @@ const emit = defineEmits<{
   (e: 'toggle'): void;
   (e: 'load-conversation', id: string): void;
   (e: 'create-new'): void;
+  (e: 'delete-conversation', id: string): void;
 }>();
 </script>
 
@@ -36,6 +37,7 @@ const emit = defineEmits<{
         :class="{ 'active': currentConversationId === convo.id }"
       >
         <span class="convo-title">{{ convo.title }}</span>
+        <button class="delete-btn" @click="emit('delete-conversation', convo.id)">X</button>
       </div>
       <div v-if="conversations.length === 0" class="no-conversations">
         No conversations yet
@@ -54,6 +56,30 @@ const emit = defineEmits<{
   flex-direction: column;
   transition: transform 0.3s ease;
   z-index: 10;
+}
+
+.delete-btn {
+  background-color: #2563eb; /* red tone */
+  color: white;
+  border: none;
+  padding: 0 0.5rem;
+  border-radius: 0.375rem; /* rounded corners */
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+.delete-btn:hover {
+  background-color: #1f54c7; /* darker red on hover */
+}
+
+.delete-btn:active {
+  transform: scale(0.98);
+}
+
+.delete-btn:focus {
+  outline: 2px solid #0c204d;
+  outline-offset: 2px;
 }
 
 .sidebar-header {
@@ -88,6 +114,8 @@ const emit = defineEmits<{
 }
 
 .conversation-item {
+  display: flex;
+  justify-content: space-between;
   padding: 0.75rem;
   border-radius: 0.5rem;
   margin-bottom: 0.5rem;

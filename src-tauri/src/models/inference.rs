@@ -25,7 +25,7 @@ impl Inference {
         let backend = LlamaBackend::init().unwrap();
         let model = LlamaModel::load_from_file(
             &backend,
-            "./src/models/Llama-3.2-3B-Instruct.Q4_K_M.gguf",
+            "./src/models/Llama-3.2-3B-Instruct-Q4_K_L.gguf",
             &LlamaModelParams::default(),
         )
         .map_err(|e| {
@@ -37,8 +37,8 @@ impl Inference {
         return Ok(Inference {
             model: model,
             backend: backend,
-            batch_size: 20480,
-            max_context_length: 20480 - 2048,
+            batch_size: 10240,
+            max_context_length: 10240 - 2048,
             max_output_length: 2048,
         });
     }

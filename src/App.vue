@@ -19,7 +19,8 @@ const {
   loadConversations, 
   loadConversation, 
   startNewConversation,
-  continueConversation
+  continueConversation,
+  deleteConversation
 } = useConversations();
 
 // Streaming state
@@ -111,6 +112,7 @@ provide('handleSendMessage', handleSendMessage);
       @toggle="toggleSidebar"
       @load-conversation="loadConversation"
       @create-new="createNewChat"
+      @delete-conversation="deleteConversation"
     />
     
     <!-- Main chat container -->

@@ -48,6 +48,15 @@ fn get_conversation(
         .map_err(|e| e.to_string())
 }
 
+#[tauri::command]
+fn delete_conversation(
+    conv_id: String,
+    state: State<'_, Mutex<ConversationController>>,
+) -> Result<String, String> {
+    let controller = state.lock().unwrap();
+    controller.delete_conversation(&conv_id).map_err(|e| e.to_string())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -58,6 +67,7 @@ pub fn run() {
             continue_conversation,
             get_conversation_ids,
             get_conversation,
+            delete_conversation,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -68,8 +68,8 @@ body {
   --text-color: #f1f5f9;
   --border-color: #334155;
   --sidebar-bg: #1e293b;
-  --message-user-bg: #1e40af;
-  --message-assistant-bg: #1e293b;
+  --message-user-bg: #475582;
+  --message-assistant-bg: #2b3a52;
   --input-bg: #1e293b;
   --shadow-color: rgba(0, 0, 0, 0.3);
 }
