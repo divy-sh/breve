@@ -1,4 +1,3 @@
-// src/composables/useConversations.ts
 import { ref } from 'vue';
 import { invoke } from "@tauri-apps/api/core";
 import type { Conversation, ConversationSummary } from '../types';

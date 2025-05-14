@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, onMounted, watch } from 'vue';
-import type { Conversation, Message } from '../types';
+import type { Conversation } from '../types';
 
 const props = defineProps<{
   conversation: Conversation | null;

@@ -86,7 +86,7 @@ async function handleSendMessage(message: string) {
       await continueConversation(currentConversation.value.id, message);
     } else {
       await startNewConversation(message);
-      await continueConversation(currentConversation.value.id, message);
+      await continueConversation(currentConversation.value!.id, message);
     }
   } catch (error) {
     console.error("Error sending message:", error);
