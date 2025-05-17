@@ -1,11 +1,13 @@
 use std::sync::Mutex;
 
+use config::path_resolver::init_app_paths;
 use controllers::conversation_controller::ConversationController;
-use tauri::{State, Window};
+use tauri::{Manager, State, Window};
 
 pub mod controllers;
 pub mod dao;
 pub mod models;
+pub mod config;
 
 #[tauri::command]
 async fn start_conversation(
@@ -61,7 +63,11 @@ fn delete_conversation(
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
-        .manage(Mutex::new(ConversationController::new()))
+        .setup(|app| {
+            init_app_paths(app.handle().clone());
+            app.manage(Mutex::new(ConversationController::new()));
+            Ok(())
+        })
         .invoke_handler(tauri::generate_handler![
             start_conversation,
             continue_conversation,

@@ -10,6 +10,7 @@ use std::io::Write;
 use std::num::NonZero;
 use tauri::{Emitter, Window};
 
+use crate::config::path_resolver::paths;
 use super::conversation::Conversation;
 
 pub struct Inference {
@@ -22,10 +23,11 @@ pub struct Inference {
 
 impl Inference {
     pub fn init() -> Result<Inference, String> {
+        let model_path = paths().resource("res/Llama-3.2-3B-Instruct-Q4_K_L.gguf")?;
         let backend = LlamaBackend::init().unwrap();
         let model = LlamaModel::load_from_file(
             &backend,
-            "./src/models/Llama-3.2-3B-Instruct-Q4_K_L.gguf",
+            model_path.to_str().unwrap(),
             &LlamaModelParams::default(),
         )
         .map_err(|e| {
