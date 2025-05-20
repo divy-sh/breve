@@ -1,14 +1,8 @@
 :root {
-  --primary-color: #3b82f6;
-  --primary-hover: #2563eb;
-  --bg-color: #f8fafc;
-  --text-color: #1e293b;
-  --border-color: #e2e8f0;
-  --sidebar-bg: #f1f5f9;
-  --message-user-bg: #e0f2fe;
-  --message-assistant-bg: #f8fafc;
-  --input-bg: #ffffff;
-  --shadow-color: rgba(0, 0, 0, 0.05);
+  --primary-color: #31363F;
+  --secondary-color: #76ABAE;
+  --background-color: #222831;
+  --text-color: #EEEEEE;
 }
 
 * {
@@ -28,8 +22,8 @@ body {
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   font-size: 16px;
   line-height: 1.5;
-  color: var(--text-color);
-  background-color: var(--bg-color);
+  color: var(--primary-color);
+  background-color: var(--background-color);
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -58,18 +52,4 @@ body {
   .mobile-only {
     display: none !important;
   }
-}
-
-/* Dark mode */
-.dark-mode {
-  --primary-color: #60a5fa;
-  --primary-hover: #93c5fd;
-  --bg-color: #0f172a;
-  --text-color: #f1f5f9;
-  --border-color: #334155;
-  --sidebar-bg: #1e293b;
-  --message-user-bg: #475582;
-  --message-assistant-bg: #2b3a52;
-  --input-bg: #1e293b;
-  --shadow-color: rgba(0, 0, 0, 0.3);
 }

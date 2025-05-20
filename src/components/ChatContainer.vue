@@ -25,7 +25,7 @@ const emit = defineEmits<{
       <button @click="emit('toggle-sidebar')" class="sidebar-toggle desktop-hidden">
         ☰
       </button>
-      <h1>{{ conversation?.title || 'New Conversation' }}</h1>
+      <h2>{{ conversation?.title || 'New Conversation' }}</h2>
     </div>
     
     <!-- Messages container -->
@@ -50,23 +50,15 @@ const emit = defineEmits<{
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  background-color: #1e293b;
+  color: var(--text-color);
 }
 
 .top-bar {
   padding: 1rem;
-  border-bottom: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--primary-color);
   display: flex;
   align-items: center;
-  color: white;
-}
-
-.top-bar h1 {
-  font-size: 1.25rem;
-  margin-left: 0.5rem;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  color: var(--secondary-color);
 }
 
 .sidebar-toggle {
@@ -74,6 +66,7 @@ const emit = defineEmits<{
   border: none;
   font-size: 1.5rem;
   cursor: pointer;
-  color: var(--text-color);
+  color: var(--secondary-color);
+  padding-right: 0.5rem;
 }
 </style>

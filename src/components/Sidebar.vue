@@ -49,37 +49,12 @@ const emit = defineEmits<{
 <style scoped>
 /* Sidebar styles */
 .sidebar {
+  background-color: var(--background-color);
   width: 280px;
-  background-color: var(--sidebar-bg);
-  border-right: 1px solid var(--border-color);
+  border-right: 1px solid var(--primary-color);
   display: flex;
   flex-direction: column;
-  transition: transform 0.3s ease;
   z-index: 10;
-}
-
-.delete-btn {
-  background-color: #2563eb; /* red tone */
-  color: white;
-  border: none;
-  padding: 0 0.5rem;
-  border-radius: 0.375rem; /* rounded corners */
-  cursor: pointer;
-  font-size: 1rem;
-  transition: background-color 0.2s ease, transform 0.1s ease;
-}
-
-.delete-btn:hover {
-  background-color: #1f54c7; /* darker red on hover */
-}
-
-.delete-btn:active {
-  transform: scale(0.98);
-}
-
-.delete-btn:focus {
-  outline: 2px solid #0c204d;
-  outline-offset: 2px;
 }
 
 .sidebar-header {
@@ -87,15 +62,15 @@ const emit = defineEmits<{
   justify-content: space-between;
   align-items: center;
   padding: 1rem;
-  border-bottom: 1px solid var(--border-color);
-  color: white;
+  border-bottom: 1px solid var(--primary-color);
+  color: var(--secondary-color);
 }
 
 .new-chat-btn {
   margin: 1rem;
   padding: 0.75rem;
   background-color: var(--primary-color);
-  color: white;
+  color: var(--text-color);
   border: none;
   border-radius: 0.5rem;
   cursor: pointer;
@@ -104,7 +79,7 @@ const emit = defineEmits<{
 }
 
 .new-chat-btn:hover {
-  background-color: var(--primary-hover);
+  background-color: var(--secondary-color);
 }
 
 .conversation-list {
@@ -124,22 +99,22 @@ const emit = defineEmits<{
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  color: white;
+  color: var(--text-color);
 }
 
 .conversation-item:hover {
-  background-color: var(--border-color);
+  background-color: var(--primary-color);
 }
 
 .conversation-item.active {
   background-color: var(--primary-color);
-  color: white;
+  color: var(--text-color);
 }
 
 .no-conversations {
   padding: 1rem;
   text-align: center;
-  color: #64748b;
+  color: var(--text-color);
 }
 
 .sidebar-toggle {

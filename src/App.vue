@@ -38,12 +38,7 @@ onMounted(async () => {
   
   // Load conversation list
   await loadConversations();
-  
-  // Listen for dark mode changes
-  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
-    darkMode.value = e.matches;
-  });
-  
+
   // Listen for window resize
   window.addEventListener('resize', handleResize);
 });
@@ -127,72 +122,10 @@ provide('handleSendMessage', handleSendMessage);
 </template>
 
 <style>
-:root {
-  --primary-color: #3b82f6;
-  --primary-hover: #2563eb;
-  --bg-color: #f8fafc;
-  --text-color: #1e293b;
-  --border-color: #e2e8f0;
-  --sidebar-bg: #f1f5f9;
-  --message-user-bg: #e0f2fe;
-  --message-assistant-bg: #f8fafc;
-  --input-bg: #ffffff;
-  --shadow-color: rgba(0, 0, 0, 0.05);
-  
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
-  font-size: 16px;
-  line-height: 1.5;
-  color: var(--text-color);
-  background-color: var(--bg-color);
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
 .app-container {
   display: flex;
   height: 100vh;
   width: 100vw;
   overflow: hidden;
-}
-
-/* Dark mode styles */
-.dark-mode {
-  --primary-color: #60a5fa;
-  --primary-hover: #93c5fd;
-  --bg-color: #0f172a;
-  --text-color: #f1f5f9;
-  --border-color: #334155;
-  --sidebar-bg: #1e293b;
-  --message-user-bg: #1e40af;
-  --message-assistant-bg: #1e293b;
-  --input-bg: #1e293b;
-  --shadow-color: rgba(0, 0, 0, 0.3);
-}
-
-@media (max-width: 768px) {
-  .desktop-hidden {
-    display: initial;
-  }
-  
-  .mobile-only {
-    display: initial;
-  }
-}
-
-@media (min-width: 769px) {
-  .desktop-hidden {
-    display: none;
-  }
-  
-  .mobile-only {
-    display: none;
-  }
 }
 </style>

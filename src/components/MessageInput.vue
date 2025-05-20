@@ -51,7 +51,7 @@ function handleKeydown(e: KeyboardEvent) {
 <style scoped>
 .input-area {
   padding: 1rem;
-  border-top: 1px solid var(--border-color);
+  border-top: 1px solid var(--primary-color);
 }
 
 .input-area form {
@@ -62,20 +62,20 @@ function handleKeydown(e: KeyboardEvent) {
 .input-area textarea {
   flex: 1;
   padding: 0.75rem;
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--primary-color);
   border-radius: 0.5rem;
   resize: none;
   height: 60px;
   font-family: inherit;
   font-size: 1rem;
-  background-color: var(--input-bg);
+  background-color: var(--background-color);
   color: var(--text-color);
 }
 
 .input-area button {
   padding: 0 1rem;
   background-color: var(--primary-color);
-  color: white;
+  color: var(--text-color);
   border: none;
   border-radius: 0.5rem;
   cursor: pointer;
@@ -84,7 +84,7 @@ function handleKeydown(e: KeyboardEvent) {
 }
 
 .input-area button:hover:not(:disabled) {
-  background-color: var(--primary-hover);
+  background-color: var(--secondary-color);
 }
 
 .input-area button:disabled {
@@ -95,7 +95,7 @@ function handleKeydown(e: KeyboardEvent) {
 .input-hint {
   margin-top: 0.5rem;
   font-size: 0.75rem;
-  color: #64748b;
   text-align: right;
+  color: var(--secondary-color);
 }
 </style>

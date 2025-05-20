@@ -79,7 +79,7 @@ onMounted(scrollToBottom);
   justify-content: center;
   height: 100%;
   text-align: center;
-  color: #64748b;
+  color: var(--text-color);
 }
 
 .welcome-screen h2 {
@@ -91,20 +91,18 @@ onMounted(scrollToBottom);
   padding: 1rem;
   border-radius: 0.5rem;
   max-width: 80%;
-  box-shadow: 0 1px 3px var(--shadow-color);
 }
 
 .message.user {
-  background-color: var(--message-user-bg);
+  background-color: var(--primary-color);
   align-self: flex-end;
-  color: white;
+  color: var(--text-color);
 }
 
 .message.assistant {
-  background-color: var(--message-assistant-bg);
+  background-color: var(--primary-color);
   align-self: flex-start;
-  border: 1px solid var(--border-color);
-  color: white;
+  color: var(--text-color);
 }
 
 .message-header {
