@@ -1,12 +1,16 @@
 <script setup lang="ts">
 import type { ConversationSummary } from '../types';
+import { ref } from 'vue';
 
 // Props
-defineProps<{
+const props = defineProps<{
   conversations: ConversationSummary[];
   currentConversationId?: string;
   isOpen: boolean;
 }>();
+
+// Local State
+const openDropdownFor = ref<string | null>(null);
 
 // Emits
 const emit = defineEmits<{
@@ -15,30 +19,44 @@ const emit = defineEmits<{
   (e: 'create-new'): void;
   (e: 'delete-conversation', id: string): void;
 }>();
+
+// Methods
+const handleMenuClick = (id: string) => {
+  console.log(id, id == props.currentConversationId)
+  if (id !== props.currentConversationId) {
+    emit('load-conversation', id);
+  } else {
+    openDropdownFor.value = openDropdownFor.value === id ? null : id;
+  }
+};
 </script>
 
 <template>
-  <aside class="sidebar" :class="{ 'open': isOpen }">
+  <aside class="sidebar" :class="{ open: isOpen }">
     <div class="sidebar-header">
       <h2>Conversations</h2>
       <button @click="emit('toggle')" class="sidebar-toggle mobile-only">×</button>
     </div>
-    
+
     <button @click="emit('create-new')" class="new-chat-btn">
       + New Chat
     </button>
-    
+
     <div class="conversation-list">
       <div 
         v-for="convo in conversations" 
         :key="convo.id" 
         @click="emit('load-conversation', convo.id)"
         class="conversation-item"
-        :class="{ 'active': currentConversationId === convo.id }"
+        :class="{ active: currentConversationId === convo.id }"
       >
         <span class="convo-title">{{ convo.title }}</span>
-        <button class="delete-btn" @click="emit('delete-conversation', convo.id)">X</button>
+        <div @click.stop="handleMenuClick(convo.id)">⋮</div>
+        <div v-if="openDropdownFor === convo.id" class="dropdown">
+          <div @click="emit('delete-conversation', convo.id)">Delete</div>
+        </div>
       </div>
+
       <div v-if="conversations.length === 0" class="no-conversations">
         No conversations yet
       </div>
@@ -91,6 +109,7 @@ const emit = defineEmits<{
 .conversation-item {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   padding: 0.75rem;
   border-radius: 0.5rem;
   margin-bottom: 0.5rem;
@@ -100,6 +119,7 @@ const emit = defineEmits<{
   overflow: hidden;
   text-overflow: ellipsis;
   color: var(--text-color);
+  position: relative;
 }
 
 .conversation-item:hover {
@@ -125,14 +145,27 @@ const emit = defineEmits<{
   color: var(--text-color);
 }
 
+.dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background-color: var(--primary-color);
+  color: var(--text-color);
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  z-index: 5;
+}
+
 /* Mobile styles */
 @media (max-width: 768px) {
   .sidebar {
     position: absolute;
     height: 100%;
     transform: translateX(-100%);
+    transition: transform 0.3s ease;
   }
-  
+
   .sidebar.open {
     transform: translateX(0);
   }
