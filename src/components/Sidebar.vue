@@ -61,6 +61,9 @@ const handleMenuClick = (id: string) => {
         No conversations yet
       </div>
     </div>
+    <div class="bottom-bar" @click="">
+      ⚙️
+    </div>
   </aside>
 </template>
 
@@ -155,6 +158,14 @@ const handleMenuClick = (id: string) => {
   border-radius: 0.5rem;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   z-index: 5;
+}
+
+.bottom-bar {
+  border-top: 1px solid var(--primary-color);
+  padding: 1rem;
+  text-align: center;
+  align-items: center;
+  color: var(--text-color);
 }
 
 /* Mobile styles */

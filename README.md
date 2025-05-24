@@ -1,10 +1,66 @@
-# Tauri + Vue + TypeScript
+# Breve
 
-This template should help get you started developing with Vue 3 and TypeScript in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
+Breve is a cross-platform desktop application built using [Tauri](https://tauri.app/), [Vue 3](https://vuejs.org/), and [TypeScript](https://www.typescriptlang.org/). It provides a conversational interface that allows users to create, manage, and continue conversations, storing all data locally using SQLite through a Rust backend.
+
+## Features
+
+- Cross-platform desktop app using Tauri and Vue 3
+- Create, update, and delete conversations
+- Persist conversations locally in SQLite
+- Modern UI with Vue 3 `<script setup>` SFCs and TypeScript
+- Rust backend for secure, high-performance operations
+- Hot-reloading and easy development experience
+
+## Architecture
+
+- **Frontend:** Vue 3, TypeScript, Vite
+- **Backend:** Tauri (Rust), SQLite for local data storage
+- **Data Model:** Conversations are stored and managed using a local SQLite database, with Rust providing data access and business logic.
+- **Communication:** Frontend and backend interact via Tauri commands.
+
+## Getting Started
+
+### Prerequisites
+
+- [Node.js](https://nodejs.org/) (16+)
+- [Rust](https://www.rust-lang.org/tools/install) (stable)
+- [Tauri CLI](https://tauri.app/v1/guides/getting-started/prerequisites/#installing-tauri-cli)
+- [Yarn](https://yarnpkg.com/) or [npm](https://www.npmjs.com/)
+
+### Installation
+
+1. Clone the repository:
+   ```sh
+   git clone https://github.com/divy-sh/breve.git
+   cd breve
+   ```
+
+2. Install frontend dependencies:
+   ```sh
+   yarn install
+   # or
+   npm install
+   ```
+
+3. Run the development server:
+   ```sh
+   yarn tauri dev
+   # or
+   npm run tauri dev
+   ```
+
+### Build
+
+To build the app for production:
+```sh
+yarn tauri build
+# or
+npm run tauri build
+```
 
 ## Recommended IDE Setup
 
-- [VS Code](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) + [Tauri](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode) + [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
+- [VS Code](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) + [Tauri VSCode Extension](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode) + [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
 
 ## Type Support For `.vue` Imports in TS
 
@@ -13,4 +69,12 @@ Since TypeScript cannot handle type information for `.vue` imports, they are shi
 1. Run `Extensions: Show Built-in Extensions` from VS Code's command palette, look for `TypeScript and JavaScript Language Features`, then right click and select `Disable (Workspace)`. By default, Take Over mode will enable itself if the default TypeScript extension is disabled.
 2. Reload the VS Code window by running `Developer: Reload Window` from the command palette.
 
-You can learn more about Take Over mode [here](https://github.com/johnsoncodehk/volar/discussions/471).
+Learn more about Take Over mode [here](https://github.com/johnsoncodehk/volar/discussions/471).
+
+## Contributing
+
+Contributions are welcome! Please open issues and pull requests to help improve Breve.
+
+## License
+
+[MIT](LICENSE)
