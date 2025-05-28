@@ -1,6 +1,12 @@
 <script setup lang="ts">
 import type { ConversationSummary } from '../types';
 import { ref } from 'vue';
+import SettingsPanel from './SettingsPanel.vue';
+
+const showSettings = ref(false);
+const toggleSettings = () => {
+  showSettings.value = !showSettings.value;
+};
 
 // Props
 const props = defineProps<{
@@ -61,9 +67,10 @@ const handleMenuClick = (id: string) => {
         No conversations yet
       </div>
     </div>
-    <div class="bottom-bar" @click="">
-      ⚙️
+    <div class="bottom-bar" @click="toggleSettings">
+      ⚙️ Settings
     </div>
+  <SettingsPanel v-if="showSettings" @close="showSettings = false" />
   </aside>
 </template>
 
