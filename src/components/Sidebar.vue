@@ -31,9 +31,8 @@ const handleMenuClick = (id: string) => {
   console.log(id, id == props.currentConversationId)
   if (id !== props.currentConversationId) {
     emit('load-conversation', id);
-  } else {
-    openDropdownFor.value = openDropdownFor.value === id ? null : id;
   }
+    openDropdownFor.value = openDropdownFor.value === id ? null : id;
 };
 </script>
 
@@ -126,7 +125,6 @@ const handleMenuClick = (id: string) => {
   cursor: pointer;
   transition: background-color 0.2s;
   white-space: nowrap;
-  overflow: hidden;
   text-overflow: ellipsis;
   color: var(--text-color);
   position: relative;
