@@ -4,10 +4,10 @@ use config::path_resolver::init_app_paths;
 use controllers::conversation_controller::ConversationController;
 use tauri::{Manager, State, Window};
 
+pub mod config;
 pub mod controllers;
 pub mod dao;
 pub mod models;
-pub mod config;
 
 #[tauri::command]
 async fn start_conversation(
@@ -56,7 +56,9 @@ fn delete_conversation(
     state: State<'_, Mutex<ConversationController>>,
 ) -> Result<String, String> {
     let controller = state.lock().unwrap();
-    controller.delete_conversation(&conv_id).map_err(|e| e.to_string())
+    controller
+        .delete_conversation(&conv_id)
+        .map_err(|e| e.to_string())
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]

@@ -10,8 +10,8 @@ use std::io::Write;
 use std::num::NonZero;
 use tauri::{Emitter, Window};
 
-use crate::config::path_resolver::paths;
 use super::conversation::Conversation;
+use crate::config::path_resolver::paths;
 
 pub struct Inference {
     pub model: LlamaModel,
@@ -34,7 +34,7 @@ impl Inference {
             eprintln!("Model load error: {:?}", e);
             format!("Model load error: {:?}", e)
         })?;
-        
+
         // TODO calculate context and batch size based on available memory
         return Ok(Inference {
             model: model,
