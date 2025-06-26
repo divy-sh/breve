@@ -1,3 +1,6 @@
+use opencl3::device::{get_all_devices, CL_DEVICE_TYPE_GPU, Device};
+
+
 pub struct Config {
     pub model: String,
     pub batch_size: i32,
@@ -29,5 +32,24 @@ impl Config {
 
     pub fn get_model_name(&mut self) -> String {
         return self.model.clone();
+    }
+
+    fn calculate_device_memory(&mut self) -> (i32, i32) {
+        let devices = get_all_devices(CL_DEVICE_TYPE_GPU).unwrap();
+
+        for (i, device_id) in devices.iter().enumerate() {
+            let device = Device::new(*device_id);
+
+            let name = device.name().unwrap();
+            let global_mem = device.global_mem_size().unwrap(); // in bytes
+            let local_mem = device.local_mem_size().unwrap();   // in bytes
+
+            println!("GPU Device {}:", i);
+            println!("  Name: {}", name);
+            println!("  Global Memory: {:.2} MB", global_mem as f64 / (1024.0 * 1024.0));
+            println!("  Local Memory: {:.2} KB", local_mem as f64 / 1024.0);
+        }
+
+        (32, 32)
     }
 }
