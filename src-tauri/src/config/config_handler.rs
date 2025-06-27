@@ -34,7 +34,7 @@ impl Config {
         return self.model.clone();
     }
 
-    fn calculate_device_memory(&mut self) -> (i32, i32) {
+    pub fn calculate_device_memory(&mut self) -> (i32, i32) {
         let devices = get_all_devices(CL_DEVICE_TYPE_GPU).unwrap();
 
         for (i, device_id) in devices.iter().enumerate() {
@@ -46,10 +46,14 @@ impl Config {
 
             println!("GPU Device {}:", i);
             println!("  Name: {}", name);
-            println!("  Global Memory: {:.2} MB", global_mem as f64 / (1024.0 * 1024.0));
-            println!("  Local Memory: {:.2} KB", local_mem as f64 / 1024.0);
+            println!("  Global Memory: {:.2} MB", self.convert_byte_to_mega_byte(global_mem));
+            println!("  Local Memory: {:.2} KB", self.convert_byte_to_mega_byte(local_mem));
         }
 
         (32, 32)
+    }
+
+    fn convert_byte_to_mega_byte(&mut self, size_in_byte: u64) -> u64 {
+        return size_in_byte / (1024 * 1024);
     }
 }

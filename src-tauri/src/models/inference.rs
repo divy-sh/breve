@@ -11,6 +11,7 @@ use std::num::NonZero;
 use tauri::{Emitter, Window};
 
 use super::conversation::Conversation;
+use crate::config::config_handler::Config;
 use crate::config::path_resolver::paths;
 
 pub struct Inference {
@@ -22,8 +23,8 @@ pub struct Inference {
 }
 
 impl Inference {
-    pub fn init() -> Result<Inference, String> {
-        let model_path = paths().resource("res/Llama-3.2-3B-Instruct-Q4_K_L.gguf")?;
+    pub fn init(config: &Config) -> Result<Inference, String> {
+        let model_path = paths().resource(config.model.clone())?;
         let backend = LlamaBackend::init().unwrap();
         let model = LlamaModel::load_from_file(
             &backend,
@@ -39,9 +40,9 @@ impl Inference {
         return Ok(Inference {
             model: model,
             backend: backend,
-            batch_size: 10240,
-            max_context_length: 10240 - 2048,
-            max_output_length: 2048,
+            batch_size: config.batch_size,
+            max_context_length: config.max_context_length,
+            max_output_length: config.max_context_size,
         });
     }
 

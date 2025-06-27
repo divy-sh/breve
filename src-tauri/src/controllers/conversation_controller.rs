@@ -1,6 +1,7 @@
 use std::fmt::Error;
 use std::vec;
 
+use crate::config::config_handler::Config;
 use crate::dao::conversation_dao::ConversationDao;
 use crate::models::conversation::Conversation;
 use crate::models::inference::Inference;
@@ -10,18 +11,22 @@ use tauri::Window;
 use uuid::Uuid;
 
 pub struct ConversationController {
-    dao: ConversationDao,
-    inference: Inference,
+    pub dao: ConversationDao,
+    pub config: Config,
+    pub inference: Inference,
 }
 
 impl ConversationController {
     pub fn new() -> Self {
-        if let Ok(inference) = Inference::init() {
+        let config = Config::init().unwrap();
+        let conversation_dao = ConversationDao::init().unwrap();
+        if let Ok(inference) = Inference::init(&config) {
             ConversationController {
-                dao: ConversationDao::init().unwrap(),
+                dao: conversation_dao,
+                config: config,
                 inference,
             }
-        } else if let Err(e) = Inference::init() {
+        } else if let Err(e) = Inference::init(&config) {
             panic!("Failed to initialize Inference: {}", e);
         } else {
             unreachable!("This should never happen");
