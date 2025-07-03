@@ -36,7 +36,6 @@ impl Inference {
             format!("Model load error: {:?}", e)
         })?;
 
-        // TODO calculate context and batch size based on available memory
         return Ok(Inference {
             model: model,
             backend: backend,
@@ -47,6 +46,7 @@ impl Inference {
     }
 
     pub fn generate_text(&mut self, conv: &Conversation, window: Window) -> Result<String, String> {
+        println!("max_context_length: {}, max_output_length: {}", self.max_context_length, self.max_output_length);
         let ctx_params = LlamaContextParams::default()
             .with_n_batch(self.batch_size.try_into().unwrap())
             .with_n_ctx(Some(

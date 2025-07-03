@@ -1,5 +1,4 @@
-use opencl3::device::{get_all_devices, CL_DEVICE_TYPE_GPU, Device};
-
+use opencl3::device::{CL_DEVICE_TYPE_GPU, Device, get_all_devices};
 
 pub struct Config {
     pub model: String,
@@ -10,52 +9,61 @@ pub struct Config {
 
 impl Config {
     pub fn init() -> Result<Config, String> {
-        return Ok(Config {
+        let (global_mem_bytes, _) = Config::calculate_device_memory();
+
+        // Memory usage estimates
+        let model_size_bytes: u64 = 2 * 1024 * 1024 * 1024; //2GB quantized model
+        let memory_for_context = global_mem_bytes.saturating_sub(model_size_bytes);
+
+        // Approx memory per token estimate: 8KB
+        let bytes_per_token: u64 = 8 * 1024;
+
+        let max_context_tokens = (memory_for_context / bytes_per_token) as i32;
+
+        // Cap at a sane upper bound (for stability)
+        let max_tokens_clamped = max_context_tokens.clamp(512, 10240);
+
+        let max_context_size = 2048;
+        let batch_size = max_tokens_clamped;
+
+        Ok(Config {
             model: "res/Llama-3.2-3B-Instruct-Q4_K_L.gguf".to_string(),
-            batch_size: 10240,
-            max_context_length: 10240 - 2048,
-            max_context_size: 2048,
-        });
+            batch_size,
+            max_context_length: max_tokens_clamped - max_context_size,
+            max_context_size,
+        })
     }
 
-    pub fn get_max_context_size(&mut self) -> i32 {
-        return self.max_context_size;
+    pub fn get_max_context_size(&self) -> i32 {
+        self.max_context_size
     }
 
-    pub fn get_max_context_length(&mut self) -> i32 {
-        return self.max_context_length;
+    pub fn get_max_context_length(&self) -> i32 {
+        self.max_context_length
     }
 
-    pub fn get_batch_size(&mut self) -> i32 {
-        return self.batch_size;
+    pub fn get_batch_size(&self) -> i32 {
+        self.batch_size
     }
 
-    pub fn get_model_name(&mut self) -> String {
-        return self.model.clone();
+    pub fn get_model_name(&self) -> String {
+        self.model.clone()
     }
 
-    pub fn calculate_device_memory(&mut self) -> (u64, u64) {
+    fn calculate_device_memory() -> (u64, u64) {
         let devices = get_all_devices(CL_DEVICE_TYPE_GPU).unwrap();
 
         let mut global_mem: u64 = 0;
         let mut local_mem: u64 = 0;
-        for (i, device_id) in devices.iter().enumerate() {
+
+        for (_, device_id) in devices.iter().enumerate() {
             let device = Device::new(*device_id);
 
-            let name = device.name().unwrap();
-            global_mem = device.global_mem_size().unwrap(); // in bytes
-            local_mem = device.local_mem_size().unwrap();   // in bytes
-
-            println!("GPU Device {}:", i);
-            println!("  Name: {}", name);
-            println!("  Global Memory: {:.2} MB", self.convert_byte_to_mega_byte(global_mem));
-            println!("  Local Memory: {:.2} KB", self.convert_byte_to_mega_byte(local_mem));
+            global_mem = device.global_mem_size().unwrap();
+            local_mem = device.local_mem_size().unwrap();
+            break;
         }
 
-        return (global_mem, local_mem);
-    }
-
-    fn convert_byte_to_mega_byte(&mut self, size_in_byte: u64) -> u64 {
-        return size_in_byte / (1024 * 1024);
+        (global_mem, local_mem)
     }
 }

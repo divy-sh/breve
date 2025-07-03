@@ -11,6 +11,11 @@ Breve is a cross-platform desktop application built using [Tauri](https://tauri.
 - Rust backend for secure, high-performance operations
 - Hot-reloading and easy development experience
 
+## Screenshots
+![alt text](media/screenshot_1.png)
+![alt text](media/screenshot_2.png)
+![alt text](media/screenshot_3.png)
+
 ## Architecture
 
 - **Frontend:** Vue 3, TypeScript, Vite
