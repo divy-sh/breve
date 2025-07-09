@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted, watch, nextTick } from 'vue';
 
 // Props
 const props = defineProps<{
@@ -13,12 +13,14 @@ const emit = defineEmits<{
 
 // State
 const inputText = ref("");
+const textareaRef = ref<HTMLTextAreaElement | null>(null);
 
 // Methods
 function handleSubmit() {
   if (inputText.value.trim() && !props.isLoading) {
     emit('send', inputText.value);
     inputText.value = "";
+    nextTick(autoResize); // reset height after clearing
   }
 }
 
@@ -28,6 +30,16 @@ function handleKeydown(e: KeyboardEvent) {
     handleSubmit();
   }
 }
+
+function autoResize() {
+  const el = textareaRef.value;
+  if (!el) return;
+  el.style.height = 'auto';
+  el.style.height = el.scrollHeight + 'px';
+}
+
+onMounted(autoResize);
+watch(inputText, autoResize);
 </script>
 
 <template>
@@ -37,6 +49,7 @@ function handleKeydown(e: KeyboardEvent) {
         v-model="inputText" 
         placeholder="Type your message..." 
         @keydown="handleKeydown"
+        @input="autoResize"
         :disabled="isLoading"
         ref="textareaRef"
       ></textarea>
@@ -70,6 +83,7 @@ function handleKeydown(e: KeyboardEvent) {
   font-size: 1rem;
   background-color: var(--background-color);
   color: var(--text-color);
+  overflow: hidden;
 }
 
 .input-area button {
