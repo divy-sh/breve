@@ -34,7 +34,7 @@ function scrollToBottom() {
 }
 
 watch(() => props.conversation?.body?.length, scrollToBottom);
-watch(() => props.streamingContent, scrollToBottom);
+// watch(() => props.streamingContent, scrollToBottom);
 
 onMounted(scrollToBottom);
 </script>
