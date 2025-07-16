@@ -10,7 +10,7 @@ Breve is a cross-platform desktop application built using [Tauri](https://tauri.
 - Modern UI with Vue 3 `<script setup>` SFCs and TypeScript
 - Rust backend for secure, high-performance operations
 - Hot-reloading and easy development experience
-- Calculate maximum text chain length and individual query length based on Device memory
+- Calculate maximum context length and individual query length based on Device memory
 
 ## Screenshots
 ![alt text](media/screenshot_1.png)
