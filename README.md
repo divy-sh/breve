@@ -80,7 +80,3 @@ Learn more about Take Over mode [here](https://github.com/johnsoncodehk/volar/di
 ## Contributing
 
 Contributions are welcome! Please open issues and pull requests to help improve Breve.
-
-## License
-
-[MIT](LICENSE)
