@@ -38,6 +38,9 @@
       "files": {},
       "hardenedRuntime": true,
       "minimumSystemVersion": "11.0"
+    },
+      "android": {
+        "minSdkVersion": 28
+      }
     }
-  }
 }
