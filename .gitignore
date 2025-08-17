@@ -25,3 +25,4 @@ dist-ssr
 
 *.gguf
 data_store.sqlite
+src-tauri/gen/android/*
