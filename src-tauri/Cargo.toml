@@ -1,8 +1,8 @@
 [package]
 name = "breve"
 version = "0.1.0"
-description = "A Tauri App"
-authors = ["you"]
+description = "Breve is a personal assistant that runs locally on your device"
+authors = ["div"]
 edition = "2024"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -25,5 +25,5 @@ serde_json = "1"
 rusqlite = "0.35.0"
 uuid = { version = "1.16.0", features = ["v4"] }
 encoding_rs = "0.8.35"
-llama-cpp-2 = "0.1.117"
+llama-cpp-2 = "0.1.121"
 opencl3 = "0.12"
