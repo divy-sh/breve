@@ -64,6 +64,13 @@ yarn tauri build
 npm run tauri build
 ```
 
+### Packaging
+
+To package for android:
+```sh
+npm run tauri android build -- --apk
+```
+
 ## Recommended IDE Setup
 
 - [VS Code](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) + [Tauri VSCode Extension](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode) + [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)

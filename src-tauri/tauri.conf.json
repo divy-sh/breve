@@ -40,7 +40,8 @@
       "minimumSystemVersion": "11.0"
     },
       "android": {
-        "minSdkVersion": 28
+        "minSdkVersion": 28,
+        "versionCode": 100
       }
     }
 }
