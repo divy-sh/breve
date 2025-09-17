@@ -12,7 +12,7 @@ impl Config {
         let (global_mem_bytes, _) = Config::calculate_device_memory();
 
         // Memory usage estimates
-        let model_size_bytes: u64 = 2 * 1024 * 1024 * 1024; //2GB quantized model
+        let model_size_bytes: u64 = 1024 * 1024 * 1024; //1GB quantized model
         let memory_for_context = global_mem_bytes.saturating_sub(model_size_bytes);
 
         // Approx memory per token estimate: 8KB
@@ -27,7 +27,7 @@ impl Config {
         let batch_size = max_tokens_clamped;
 
         Ok(Config {
-            model: "res/Llama-3.2-3B-Instruct-Q4_K_L.gguf".to_string(),
+            model: "res/Llama-3.2-1B-Instruct-Q4_K_L.gguf".to_string(),
             batch_size,
             max_context_length: max_tokens_clamped - max_context_size,
             max_context_size,

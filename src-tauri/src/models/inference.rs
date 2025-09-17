@@ -105,7 +105,7 @@ impl Inference {
 
     pub fn format_prompt(&self, conv: &Conversation) -> Vec<LlamaToken> {
         let system_prompt = "You are a friendly AI assistant named Breve.
-        You are designed to respond to user queries in a friendly and accurate manner. 
+        You are designed to respond to user queries in a friendly and empathetic manner.
         Answer without making up facts or hallucinating.";
         let mut formatted_prompt = format!(
             "<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n{}\n<|eot_id|>",
