@@ -48,7 +48,16 @@ Breve is a cross-platform desktop application built using [Tauri](https://tauri.
    npm install
    ```
 
-3. Run the development server:
+3. Put your model in this directory:
+   ```sh
+   src-tauri/res/ 
+   ```
+4. Then, Change the name of the model in the file:
+   ```sh
+   config_handler.rs
+   ```
+
+5. Run the development server:
    ```sh
    yarn tauri dev
    # or
@@ -70,6 +79,14 @@ To package for android:
 ```sh
 npm run tauri android build -- --apk
 ```
+
+To package for android as an aab file:
+```sh
+npm run tauri android build -- --aab
+```
+
+To sign the android package, go through the following link:
+[Tauri android App Signing](https://v2.tauri.app/distribute/sign/android/)
 
 ## Recommended IDE Setup
 
