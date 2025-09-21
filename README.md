@@ -84,6 +84,14 @@ To package for android as an aab file:
 ```sh
 npm run tauri android build -- --aab
 ```
+```sh
+--relese // add this for release
+```
+
+If you want to set build type debug:
+```sh
+--debug // add this for debug
+```
 
 To sign the android package, go through the following link:
 [Tauri android App Signing](https://v2.tauri.app/distribute/sign/android/)
