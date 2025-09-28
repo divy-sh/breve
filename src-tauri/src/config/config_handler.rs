@@ -1,7 +1,8 @@
 use opencl3::device::{CL_DEVICE_TYPE_GPU, Device, get_all_devices};
 
 pub struct Config {
-    pub model: String,
+    pub model_name: String,
+    pub model_url: String,
     pub batch_size: i32,
     pub max_context_length: i32,
     pub max_context_size: i32,
@@ -27,7 +28,8 @@ impl Config {
         let batch_size = max_tokens_clamped;
 
         Ok(Config {
-            model: "res/Llama-3.2-1B-Instruct-Q4_K_L.gguf".to_string(),
+            model_name: "Llama-3.2-1B-Instruct-Q4_K_S.gguf".to_string(),
+            model_url: "bartowski/Llama-3.2-1B-Instruct-GGUF".to_string(),
             batch_size,
             max_context_length: max_tokens_clamped - max_context_size,
             max_context_size,
@@ -47,7 +49,7 @@ impl Config {
     }
 
     pub fn get_model_name(&self) -> String {
-        self.model.clone()
+        self.model_name.clone()
     }
 
     fn calculate_device_memory() -> (u64, u64) {
