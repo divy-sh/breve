@@ -24,7 +24,7 @@ pub struct Inference {
 
 impl Inference {
     pub fn init(config: &Config) -> Result<Inference, String> {
-        let model_path = format!("/res{}", config.model_name.clone());
+        let model_path = format!("res/{}", config.model_name.clone());
         model_fetcher::ModelFetcher::fetch_model(&config.model_url, &config.model_name, &model_path)
             .map_err(|e| format!("Model fetch error: {:?}", e))?;
         let backend = LlamaBackend::init().unwrap();
