@@ -27,3 +27,5 @@ uuid = { version = "1.16.0", features = ["v4"] }
 encoding_rs = "0.8.35"
 llama-cpp-2 = "0.1.121"
 opencl3 = "0.12"
+hf-hub = "=0.4.3"
+anyhow = "1.0.100"

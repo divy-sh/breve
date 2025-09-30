@@ -1,6 +1,6 @@
 use std::fmt::Error;
 
-use crate::{config::config_handler::Config, models::conversation::{Conversation, Message}};
+use crate::models::conversation::{Conversation, Message};
 use rusqlite::{Connection, Result, params};
 use serde_json;
 
@@ -9,8 +9,8 @@ pub struct ConversationDao {
 }
 
 impl ConversationDao {
-    pub fn init(config: &Config) -> Result<Self> {
-        let conn = Connection::open(config.get_db_path())?;
+    pub fn init() -> Result<Self> {
+        let conn = Connection::open("./data_store.sqlite")?;
         conn.execute(
             "CREATE TABLE IF NOT EXISTS conversations (
                 id TEXT PRIMARY KEY,
