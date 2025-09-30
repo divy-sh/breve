@@ -1,5 +1,6 @@
 use opencl3::device::{CL_DEVICE_TYPE_GPU, Device, get_all_devices};
 
+#[derive(Clone)]
 pub struct Config {
     pub model_name: String,
     pub model_url: String,
@@ -50,6 +51,10 @@ impl Config {
 
     pub fn get_model_name(&self) -> String {
         self.model_name.clone()
+    }
+
+    pub fn get_model_path(&self) -> String {
+        format!("res/{}", self.model_name)
     }
 
     fn calculate_device_memory() -> (u64, u64) {

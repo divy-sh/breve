@@ -5,6 +5,7 @@ import { listen } from "@tauri-apps/api/event";
 import Sidebar from "./components/Sidebar.vue";
 import ChatContainer from "./components/ChatContainer.vue";
 import { useConversations } from "./composables/useConversations";
+import DownloadingModel from "./components/DownloadingModel.vue";
 
 // Types
 
@@ -26,9 +27,12 @@ const {
 // Streaming state
 const currentStreamingContent = ref("");
 const isLoading = ref(false);
+const loadingModel = ref(false);
 
 // Unlisten function for the event listener
 let unlisten: (() => void) | null = null;
+
+let unlisten2: (() => void) | null = null;
 
 // Setup event listener for LLM streaming responses
 onMounted(async () => {
@@ -36,6 +40,9 @@ onMounted(async () => {
     currentStreamingContent.value += event.payload as string;
   });
   
+  unlisten2 = await listen("downloading-model", (event) => {
+    loadingModel.value = event.payload as boolean;
+  });
   // Load conversation list
   await loadConversations();
 
@@ -46,6 +53,9 @@ onMounted(async () => {
 onUnmounted(() => {
   if (unlisten) {
     unlisten();
+  }
+  if (unlisten2) {
+    unlisten2();
   }
   window.removeEventListener('resize', handleResize);
 });
@@ -99,8 +109,10 @@ provide('handleSendMessage', handleSendMessage);
 
 <template>
   <div class="app-container" :class="{ 'dark-mode': darkMode }">
+  
+    <DownloadingModel v-if="loadingModel"/>
     <!-- Sidebar component -->
-    <Sidebar 
+    <Sidebar v-if="loadingModel === false"
       :conversations="conversations" 
       :currentConversationId="currentConversation?.id"
       :isOpen="sidebarOpen"
@@ -109,9 +121,8 @@ provide('handleSendMessage', handleSendMessage);
       @create-new="createNewChat"
       @delete-conversation="deleteConversation"
     />
-    
     <!-- Main chat container -->
-    <ChatContainer
+    <ChatContainer v-if="loadingModel === false"
       :conversation="currentConversation"
       :isLoading="isLoading"
       :streamingContent="currentStreamingContent"

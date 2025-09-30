@@ -11,6 +11,14 @@ export function useConversations() {
    */
   async function loadConversations() {
     try {
+      // Trigger model download in background if necessary. This returns immediately.
+      try {
+        await invoke("ensure_model", {});
+      } catch (e) {
+        // Non-fatal if ensure_model isn't available for some reason
+        console.warn("ensure_model invoke failed:", e);
+      }
+
       const ids = await invoke("get_conversation_ids") as string[];
       const loadedConversations: ConversationSummary[] = [];
       

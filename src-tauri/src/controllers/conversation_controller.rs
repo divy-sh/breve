@@ -13,24 +13,22 @@ use uuid::Uuid;
 pub struct ConversationController {
     pub dao: ConversationDao,
     pub config: Config,
-    pub inference: Inference,
+    pub inference: Option<Inference>,
 }
 
 impl ConversationController {
     pub fn new() -> Self {
         let config = Config::init().unwrap();
         let conversation_dao = ConversationDao::init().unwrap();
-        if let Ok(inference) = Inference::init(&config) {
-            ConversationController {
-                dao: conversation_dao,
-                config: config,
-                inference,
-            }
-        } else if let Err(e) = Inference::init(&config) {
-            panic!("Failed to initialize Inference: {}", e);
-        } else {
-            unreachable!("This should never happen");
+        ConversationController {
+            dao: conversation_dao,
+            config: config,
+            inference: None,
         }
+    }
+
+    pub fn set_inference(&mut self, inference: Inference) {
+        self.inference = Some(inference);
     }
 
     pub fn get_conversation_ids(&self) -> Vec<String> {
@@ -57,7 +55,7 @@ impl ConversationController {
         if let Some(mut conversation) = self.dao.get_conversation(conv_id)? {
             conversation.add_message("user", user_input);
 
-            if let Ok(ai_reply) = self.inference.generate_text(&conversation, window) {
+            if let Ok(ai_reply) = self.inference.as_mut().unwrap().generate_text(&conversation, window) {
                 conversation.add_message("assistant", &ai_reply);
 
                 self.dao.update_conversation(&conversation)?;
