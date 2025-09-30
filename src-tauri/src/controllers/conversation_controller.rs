@@ -19,7 +19,7 @@ pub struct ConversationController {
 impl ConversationController {
     pub fn new() -> Self {
         let config = Config::init().unwrap();
-        let conversation_dao = ConversationDao::init().unwrap();
+        let conversation_dao = ConversationDao::init(&config).unwrap();
         if let Ok(inference) = Inference::init(&config) {
             ConversationController {
                 dao: conversation_dao,
