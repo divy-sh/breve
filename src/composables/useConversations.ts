@@ -1,10 +1,12 @@
 import { ref } from 'vue';
 import { invoke } from "@tauri-apps/api/core";
+import { listen } from '@tauri-apps/api/event';
 import type { Conversation, ConversationSummary } from '../types';
 
 export function useConversations() {
   const conversations = ref<ConversationSummary[]>([]);
   const currentConversation = ref<Conversation | null>(null);
+  const isDownloadingModel = ref<boolean>(false);
 
   /**
    * Load all conversations from the backend
@@ -12,12 +14,20 @@ export function useConversations() {
   async function loadConversations() {
     try {
       // Trigger model download in background if necessary. This returns immediately.
-      try {
-        await invoke("ensure_model", {});
-      } catch (e) {
-        // Non-fatal if ensure_model isn't available for some reason
-        console.warn("ensure_model invoke failed:", e);
-      }
+      // Fire-and-forget the ensure_model invoke so the UI doesn't wait on it.
+      // Any errors are non-fatal and will be logged.
+      invoke("ensure_model", {}).catch((e) => console.warn("ensure_model invoke failed:", e));
+
+      // Listen for backend download events once (safe to call multiple times; listener will be a no-op if already set)
+      // We don't await the listen promise here; update the reactive ref when events arrive.
+      listen('downloading-model', (event) => {
+        try {
+          // payload should be a boolean
+          isDownloadingModel.value = !!(event.payload as any);
+        } catch (err) {
+          console.warn('downloading-model event payload unexpected', err);
+        }
+      }).catch((e) => console.warn('failed to attach downloading-model listener', e));
 
       const ids = await invoke("get_conversation_ids") as string[];
       const loadedConversations: ConversationSummary[] = [];
@@ -115,6 +125,7 @@ export function useConversations() {
   return {
     conversations,
     currentConversation,
+    isDownloadingModel,
     loadConversations,
     loadConversation,
     startNewConversation,

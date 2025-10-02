@@ -43,8 +43,8 @@ onMounted(async () => {
   unlisten2 = await listen("downloading-model", (event) => {
     loadingModel.value = event.payload as boolean;
   });
-  // Load conversation list
-  await loadConversations();
+  // Load conversation list in background so the UI can render immediately.
+  loadConversations().catch((e) => console.error('loadConversations failed', e));
 
   // Listen for window resize
   window.addEventListener('resize', handleResize);

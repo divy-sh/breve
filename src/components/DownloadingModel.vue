@@ -1,13 +1,45 @@
 <template>
     <div class="downloading-model">
         <div class="spinner"></div>
-        <p>Downloading model for the first time. Please wait...</p>
+        <p v-if="progress === null">Downloading model for the first time. Please wait...</p>
+        <p v-else>Downloading model: {{ progress.toFixed(1) }}%</p>
     </div>
 </template>
 
 <script>
+import { onMounted, onBeforeUnmount, ref } from 'vue';
+import { listen } from '@tauri-apps/api/event';
+
 export default {
-    name: 'DownloadingModel'
+    name: 'DownloadingModel',
+    setup() {
+        const progress = ref(null);
+    let unlistenProgress = null;
+    let unlistenDownloading = null;
+
+        onMounted(async () => {
+            unlistenProgress = await listen('download-progress', (event) => {
+                // event.payload is the percentage number
+                if (event && event.payload !== undefined && event.payload !== null) {
+                    progress.value = Number(event.payload);
+                }
+            });
+
+            // Ensure we clear UI when downloading-model false is emitted
+            unlistenDownloading = await listen('downloading-model', (event) => {
+                if (event && event.payload === false) {
+                    progress.value = 100;
+                }
+            });
+        });
+
+        onBeforeUnmount(() => {
+            if (unlistenProgress) { unlistenProgress(); }
+            if (unlistenDownloading) { unlistenDownloading(); }
+        });
+
+        return { progress };
+    }
 }
 </script>
 

@@ -58,16 +58,23 @@ fn ensure_model(window: Window, state: tauri::State<Arc<Mutex<ConversationContro
     let state_arc = Arc::clone(&state.inner());
     let window_for_thread = window.clone();
     std::thread::spawn(move || {
-        let mut controller = match state_arc.lock() {
-            Ok(c) => c,
+        // Acquire the lock only briefly to read config and check existing inference.
+        let config = match state_arc.lock() {
+            Ok(controller) => {
+                // If inference is already initialized, nothing to do.
+                if controller.inference.is_some() {
+                    return;
+                }
+                controller.config.clone()
+            }
             Err(_) => {
                 let _ = window_for_thread.emit("downloading-model", false);
                 eprintln!("Failed to acquire controller lock in ensure_model");
                 return;
             }
         };
-        let config = controller.config.clone();
-        // fetch_model will emit events to the provided window as it runs
+
+        // fetch_model will emit events to the provided window as it runs. Do this without holding the controller lock.
         if let Err(e) = models::model_fetcher::ModelFetcher::fetch_model(
             &config.model_url,
             &config.model_name,
@@ -77,14 +84,26 @@ fn ensure_model(window: Window, state: tauri::State<Arc<Mutex<ConversationContro
             eprintln!("Model fetch failed: {:?}", e);
             // In case of error, make sure to notify frontend to stop loading state
             let _ = window_for_thread.emit("downloading-model", false);
-        } else {
-            // Avoid borrowing controller.config while mutably borrowing controller
-            match Inference::init(&config) {
-                Ok(inference) => controller.set_inference(inference),
-                Err(e) => {
-                    eprintln!("Inference init failed: {}", e);
-                    let _ = window_for_thread.emit("downloading-model", false);
+            return;
+        }
+
+        // Initialize inference (may be expensive) without holding the controller lock.
+        match Inference::init(&config) {
+            Ok(inference) => {
+                // Reacquire the lock only to set the inference instance.
+                match state_arc.lock() {
+                    Ok(mut controller) => {
+                        controller.set_inference(inference);
+                    }
+                    Err(_) => {
+                        eprintln!("Failed to acquire controller lock to set inference");
+                        let _ = window_for_thread.emit("downloading-model", false);
+                    }
                 }
+            }
+            Err(e) => {
+                eprintln!("Inference init failed: {}", e);
+                let _ = window_for_thread.emit("downloading-model", false);
             }
         }
     });
