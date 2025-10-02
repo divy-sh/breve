@@ -14,12 +14,16 @@ pub mod models;
 #[tauri::command]
 async fn start_conversation(
     title: String,
-    state: State<'_, Mutex<ConversationController>>,
+    state: State<'_, Arc<Mutex<ConversationController>>>,
 ) -> Result<String, String> {
-    let mut controller = state.lock().unwrap();
-    controller
-        .start_new_conversation(&title)
-        .map_err(|e| e.to_string())
+    // clone the Arc to get ownership for locking
+    let state_arc = Arc::clone(&state.inner());
+    match state_arc.lock() {
+        Ok(mut controller) => controller
+            .start_new_conversation(&title)
+            .map_err(|e| e.to_string()),
+        Err(_) => Err("Internal error: controller lock poisoned".to_string()),
+    }
 }
 
 #[tauri::command]
@@ -27,18 +31,24 @@ async fn continue_conversation(
     conv_id: String,
     user_input: String,
     window: Window,
-    state: State<'_, Mutex<ConversationController>>,
+    state: State<'_, Arc<Mutex<ConversationController>>>,
 ) -> Result<Option<String>, String> {
-    let mut controller = state.lock().unwrap();
-    controller
-        .continue_conversation(&conv_id, &user_input, window)
-        .map_err(|e| e.to_string())
+    let state_arc = Arc::clone(&state.inner());
+    match state_arc.lock() {
+        Ok(mut controller) => controller
+            .continue_conversation(&conv_id, &user_input, window)
+            .map_err(|e| e.to_string()),
+        Err(_) => Err("Internal error: controller lock poisoned".to_string()),
+    }
 }
 
 #[tauri::command]
-fn get_conversation_ids(state: State<'_, Mutex<ConversationController>>) -> Vec<String> {
-    let controller = state.lock().unwrap();
-    controller.get_conversation_ids()
+fn get_conversation_ids(state: State<'_, Arc<Mutex<ConversationController>>>) -> Vec<String> {
+    let state_arc = Arc::clone(&state.inner());
+    match state_arc.lock() {
+        Ok(controller) => controller.get_conversation_ids(),
+        Err(_) => vec![],
+    }
 }
 
 /// Ensure model is available. This spawns a background thread to download the model
@@ -48,7 +58,14 @@ fn ensure_model(window: Window, state: tauri::State<Arc<Mutex<ConversationContro
     let state_arc = Arc::clone(&state.inner());
     let window_for_thread = window.clone();
     std::thread::spawn(move || {
-        let mut controller = state_arc.lock().unwrap();
+        let mut controller = match state_arc.lock() {
+            Ok(c) => c,
+            Err(_) => {
+                let _ = window_for_thread.emit("downloading-model", false);
+                eprintln!("Failed to acquire controller lock in ensure_model");
+                return;
+            }
+        };
         let config = controller.config.clone();
         // fetch_model will emit events to the provided window as it runs
         if let Err(e) = models::model_fetcher::ModelFetcher::fetch_model(
@@ -62,8 +79,12 @@ fn ensure_model(window: Window, state: tauri::State<Arc<Mutex<ConversationContro
             let _ = window_for_thread.emit("downloading-model", false);
         } else {
             // Avoid borrowing controller.config while mutably borrowing controller
-            if let Ok(inference) = Inference::init(&config) {
-                controller.set_inference(inference);
+            match Inference::init(&config) {
+                Ok(inference) => controller.set_inference(inference),
+                Err(e) => {
+                    eprintln!("Inference init failed: {}", e);
+                    let _ = window_for_thread.emit("downloading-model", false);
+                }
             }
         }
     });
@@ -73,23 +94,29 @@ fn ensure_model(window: Window, state: tauri::State<Arc<Mutex<ConversationContro
 #[tauri::command]
 fn get_conversation(
     conv_id: String,
-    state: State<'_, Mutex<ConversationController>>,
+    state: State<'_, Arc<Mutex<ConversationController>>>,
 ) -> Result<Option<models::conversation::Conversation>, String> {
-    let controller = state.lock().unwrap();
-    controller
-        .get_conversation(&conv_id)
-        .map_err(|e| e.to_string())
+    let state_arc = Arc::clone(&state.inner());
+    match state_arc.lock() {
+        Ok(controller) => controller
+            .get_conversation(&conv_id)
+            .map_err(|e| e.to_string()),
+        Err(_) => Err("Internal error: controller lock poisoned".to_string()),
+    }
 }
 
 #[tauri::command]
 fn delete_conversation(
     conv_id: String,
-    state: State<'_, Mutex<ConversationController>>,
+    state: State<'_, Arc<Mutex<ConversationController>>>,
 ) -> Result<String, String> {
-    let controller = state.lock().unwrap();
-    controller
-        .delete_conversation(&conv_id)
-        .map_err(|e| e.to_string())
+    let state_arc = Arc::clone(&state.inner());
+    match state_arc.lock() {
+        Ok(controller) => controller
+            .delete_conversation(&conv_id)
+            .map_err(|e| e.to_string()),
+        Err(_) => Err("Internal error: controller lock poisoned".to_string()),
+    }
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]

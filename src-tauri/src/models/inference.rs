@@ -23,7 +23,13 @@ pub struct Inference {
 
 impl Inference {
     pub fn init(config: &Config) -> Result<Inference, String> {
-        let backend = LlamaBackend::init().unwrap();
+        let backend = match LlamaBackend::init() {
+            Ok(b) => b,
+            Err(e) => {
+                eprintln!("Backend init error: {:?}", e);
+                return Err(format!("Backend init error: {:?}", e));
+            }
+        };
         let model = LlamaModel::load_from_file(
             &backend,
             config.get_model_path(),
@@ -56,7 +62,10 @@ impl Inference {
             .map_err(|e| format!("Session creation error: {:?}", e))?;
 
         let mut batch = LlamaBatch::new(self.batch_size as usize, 8);
-        let tokens_list = self.format_prompt(conv);
+        let tokens_list = match self.format_prompt(conv) {
+            Ok(t) => t,
+            Err(e) => return Err(e),
+        };
         let last_index = tokens_list.len() as i32 - 1;
 
         for (i, token) in (0_i32..).zip(tokens_list.into_iter()) {
@@ -101,7 +110,7 @@ impl Inference {
         Ok(message)
     }
 
-    pub fn format_prompt(&self, conv: &Conversation) -> Vec<LlamaToken> {
+    pub fn format_prompt(&self, conv: &Conversation) -> Result<Vec<LlamaToken>, String> {
         let system_prompt = "You are a friendly AI assistant named Breve.
         You are designed to respond to user queries in a friendly and empathetic manner.
         Answer without making up facts or hallucinating.";
@@ -136,6 +145,5 @@ impl Inference {
         self.model
             .str_to_token(&formatted_prompt, AddBos::Always)
             .map_err(|e| format!("Tokenization failed: {:?}", e))
-            .unwrap()
     }
 }

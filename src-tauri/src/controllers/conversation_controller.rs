@@ -55,13 +55,22 @@ impl ConversationController {
         if let Some(mut conversation) = self.dao.get_conversation(conv_id)? {
             conversation.add_message("user", user_input);
 
-            if let Ok(ai_reply) = self.inference.as_mut().unwrap().generate_text(&conversation, window) {
-                conversation.add_message("assistant", &ai_reply);
+            // Ensure inference is available
+            let inference = match self.inference.as_mut() {
+                Some(i) => i,
+                None => return Ok(None),
+            };
 
-                self.dao.update_conversation(&conversation)?;
-                Ok(Some(ai_reply))
-            } else {
-                Ok(None)
+            match inference.generate_text(&conversation, window) {
+                Ok(ai_reply) => {
+                    conversation.add_message("assistant", &ai_reply);
+                    self.dao.update_conversation(&conversation)?;
+                    Ok(Some(ai_reply))
+                }
+                Err(e) => {
+                    eprintln!("AI generation error: {}", e);
+                    Ok(None)
+                }
             }
         } else {
             Ok(None)
