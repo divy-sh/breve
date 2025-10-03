@@ -1,5 +1,7 @@
 use opencl3::device::{CL_DEVICE_TYPE_GPU, Device, get_all_devices};
 
+use crate::config::path_resolver;
+
 #[derive(Clone)]
 pub struct Config {
     pub model_name: String,
@@ -7,6 +9,7 @@ pub struct Config {
     pub batch_size: i32,
     pub max_context_length: i32,
     pub max_context_size: i32,
+    db_name: String,
 }
 
 impl Config {
@@ -31,6 +34,7 @@ impl Config {
         Ok(Config {
             model_name: "Llama-3.2-1B-Instruct-Q4_K_S.gguf".to_string(),
             model_url: "bartowski/Llama-3.2-1B-Instruct-GGUF".to_string(),
+            db_name: "data_store.sqlite".to_string(),
             batch_size,
             max_context_length: max_tokens_clamped - max_context_size,
             max_context_size,
@@ -54,7 +58,11 @@ impl Config {
     }
 
     pub fn get_model_path(&self) -> String {
-        format!("res/{}", self.model_name)
+        path_resolver::paths().app_local_data(&self.model_name).unwrap().to_str().unwrap().to_string()
+    }
+
+    pub fn get_db_path(&self) -> String {
+        path_resolver::paths().app_local_data(&self.db_name).unwrap().to_str().unwrap().to_string()
     }
 
     fn calculate_device_memory() -> (u64, u64) {

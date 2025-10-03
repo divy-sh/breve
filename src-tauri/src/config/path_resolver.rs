@@ -1,3 +1,4 @@
+use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::OnceLock;
 use tauri::{AppHandle, Manager, path::BaseDirectory};
@@ -23,10 +24,20 @@ impl AppPaths {
     }
 
     pub fn app_local_data<P: AsRef<Path>>(&self, path: P) -> Result<PathBuf, String> {
-        self.app_handle
+        let path = self.app_handle
             .path()
             .resolve(path, BaseDirectory::AppLocalData)
-            .map_err(|e| format!("Failed to resolve app local data path: {}", e))
+            .map_err(|e| format!("Failed to resolve app local data path: {}", e))?;
+
+        // Ensure parent directory exists
+        if let Some(parent) = path.parent() {
+            if !parent.exists() {
+                fs::create_dir_all(parent)
+                    .map_err(|e| format!("Unable to create appLocalData directory: {}", e))?;
+            }
+        }
+
+        Ok(path)
     }
 }
 
