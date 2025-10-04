@@ -48,14 +48,12 @@ Breve is a cross-platform desktop application built using [Tauri](https://tauri.
    npm install
    ```
 
-3. Put your model in this directory:
-   ```sh
-   src-tauri/res/ 
-   ```
-4. Then, Change the name of the model in the file:
+3. If you want a specific model, change the name and url of the model in the file:
    ```sh
    config_handler.rs
    ```
+
+4. The model will be downloaded on the first run to the appLocalData directory of yor respective system.
 
 5. Run the development server:
    ```sh
