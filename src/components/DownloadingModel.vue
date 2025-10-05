@@ -1,8 +1,20 @@
 <template>
     <div class="downloading-model">
-        <div class="spinner"></div>
-        <p v-if="progress === null">Downloading model for the first time. Please wait...</p>
-        <p v-else>Downloading model: {{ progress.toFixed(1) }}%</p>
+        <div class="breve-icon">
+            <img src="../assets/icon.png" alt="Breve Icon" width="100" height="100" />
+        </div>
+        <div v-if="progress === null">
+            <p>Downloading model: {{ 0 }}%</p>
+            <div class="progress-bar">
+                <div class="progress-fill" :style="{ width: 0 + '%' }"></div>
+            </div>        
+        </div>
+        <div v-else class="progress-container">
+            <p>Downloading model: {{ progress.toFixed(1) }}%</p>
+            <div class="progress-bar">
+                <div class="progress-fill" :style="{ width: progress + '%' }"></div>
+            </div>
+        </div>
     </div>
 </template>
 
@@ -14,18 +26,16 @@ export default {
     name: 'DownloadingModel',
     setup() {
         const progress = ref(null);
-    let unlistenProgress = null;
-    let unlistenDownloading = null;
+        let unlistenProgress = null;
+        let unlistenDownloading = null;
 
         onMounted(async () => {
             unlistenProgress = await listen('download-progress', (event) => {
-                // event.payload is the percentage number
                 if (event && event.payload !== undefined && event.payload !== null) {
                     progress.value = Number(event.payload);
                 }
             });
 
-            // Ensure we clear UI when downloading-model false is emitted
             unlistenDownloading = await listen('downloading-model', (event) => {
                 if (event && event.payload === false) {
                     progress.value = 100;
@@ -34,8 +44,8 @@ export default {
         });
 
         onBeforeUnmount(() => {
-            if (unlistenProgress) { unlistenProgress(); }
-            if (unlistenDownloading) { unlistenDownloading(); }
+            if (unlistenProgress) unlistenProgress();
+            if (unlistenDownloading) unlistenDownloading();
         });
 
         return { progress };
@@ -44,28 +54,41 @@ export default {
 </script>
 
 <style scoped>
+.breve-icon {
+    margin-bottom: 2rem;
+}
+
 .downloading-model {
     flex: 1;
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    color: var(--text-color);
+    color: var(--secondary-color);
     align-items: center;
     justify-content: center;
     text-align: center;
+    padding: 1rem;
 }
 
-.spinner {
-    width: 40px;
-    height: 40px;
-    border: 4px solid #ccc;
-    border-top: 4px solid #42b983;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-    margin-bottom: 16px;
+.progress-container {
+    width: 80%;
+    max-width: 400px;
 }
 
-@keyframes spin {
-    to { transform: rotate(360deg); }
+.progress-bar {
+    width: 100%;
+    height: 10px;
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 9999px;
+    overflow: hidden;
+    margin-top: 0.5rem;
+}
+
+.progress-fill {
+    height: 100%;
+    background-color: var(--accent-color, #4caf50);
+    width: 0%;
+    transition: width 0.2s ease;
+    border-radius: 9999px;
 }
 </style>
