@@ -1,4 +1,3 @@
-use hf_hub::api::sync::Api;
 use anyhow::{Context, Result};
 use tauri::{Emitter, Window};
 use std::path::Path;
@@ -17,13 +16,7 @@ impl ModelFetcher {
         if dest_path.exists() {
             return Ok(());
         }
-        let _ = window.emit("downloading-model", true);
-
-    // Attempt to construct a direct download URL and stream it with progress reporting.
-        // Example raw URL: https://huggingface.co/{repo}/resolve/main/{filename}
-    let api = Api::new().context("failed to build HF API client")?;
-    let repo = api.model(model_url.to_string());
-
+        let _ = window.emit("download-status", "downloading");
         // Build the raw file URL. This assumes the file is available under `main` branch and
         // the repository follows standard Hugging Face layout.
         let raw_url = format!("https://huggingface.co/{}/resolve/main/{}", model_url, model_name);
@@ -41,20 +34,6 @@ impl ModelFetcher {
         if !resp.status().is_success() {
             // Fallback: try hf_hub's get (no progress) to keep previous behavior
             eprintln!("Raw download failed (status: {}), falling back to hf_hub get", resp.status());
-            let tmp_path = repo.get(&model_name).context("failed to download model file with hf_hub fallback")?;
-
-            println!("Downloaded model to temporary path: {:?}", tmp_path);
-            
-            // Ensure parent directory exists
-            if let Some(parent) = dest_path.parent() {
-                fs::create_dir_all(parent).context("failed to create model_path directory")?;
-            }
-
-            fs::copy(&tmp_path, &dest_path).and_then(|_| fs::remove_file(&tmp_path))
-                .context("failed to move downloaded model to model_path")?;
-
-            println!("Model downloaded to: {}", model_path);
-            let _ = window.emit("downloading-model", false);
             return Ok(());
         }
 
@@ -99,7 +78,7 @@ impl ModelFetcher {
         println!("Model downloaded to: {}", model_path);
         // Final progress emit (100%) and end boolean
         let _ = window.emit("download-progress", 100.0);
-        let _ = window.emit("downloading-model", false);
+        let _ = window.emit("download-status", "downloaded");
         Ok(())
     }
 }

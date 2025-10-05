@@ -6,6 +6,7 @@ import Sidebar from "./components/Sidebar.vue";
 import ChatContainer from "./components/ChatContainer.vue";
 import { useConversations } from "./composables/useConversations";
 import DownloadingModel from "./components/DownloadingModel.vue";
+import DownloadPage from "./components/DownloadPage.vue";
 
 // Types
 
@@ -14,7 +15,7 @@ const darkMode = ref(window.matchMedia('(prefers-color-scheme: dark)').matches);
 const sidebarOpen = ref(window.innerWidth > 768);
 
 // Use composable for conversation management
-const { 
+const {
   conversations, 
   currentConversation, 
   loadConversations, 
@@ -27,7 +28,7 @@ const {
 // Streaming state
 const currentStreamingContent = ref("");
 const isLoading = ref(false);
-const loadingModel = ref(false);
+const downloadStatus = ref("");
 
 // Unlisten function for the event listener
 let unlisten: (() => void) | null = null;
@@ -40,13 +41,12 @@ onMounted(async () => {
     currentStreamingContent.value += event.payload as string;
   });
   
-  unlisten2 = await listen("downloading-model", (event) => {
-    loadingModel.value = event.payload as boolean;
+  unlisten2 = await listen("download-status", (event) => {
+    downloadStatus.value = event.payload as string;
   });
+
   // Load conversation list in background so the UI can render immediately.
   loadConversations().catch((e) => console.error('loadConversations failed', e));
-
-  // Listen for window resize
   window.addEventListener('resize', handleResize);
 });
 
@@ -109,10 +109,10 @@ provide('handleSendMessage', handleSendMessage);
 
 <template>
   <div class="app-container" :class="{ 'dark-mode': darkMode }">
-  
-    <DownloadingModel v-if="loadingModel"/>
+    <DownloadPage v-if="downloadStatus === 'awaitingUser'"/>
+    <DownloadingModel v-if="downloadStatus === 'downloading'"/>
     <!-- Sidebar component -->
-    <Sidebar v-if="loadingModel === false"
+    <Sidebar v-if="downloadStatus === 'downloaded'"
       :conversations="conversations" 
       :currentConversationId="currentConversation?.id"
       :isOpen="sidebarOpen"
@@ -122,7 +122,7 @@ provide('handleSendMessage', handleSendMessage);
       @delete-conversation="deleteConversation"
     />
     <!-- Main chat container -->
-    <ChatContainer v-if="loadingModel === false"
+    <ChatContainer v-if="downloadStatus === 'downloaded'"
       :conversation="currentConversation"
       :isLoading="isLoading"
       :streamingContent="currentStreamingContent"

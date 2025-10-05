@@ -1,6 +1,7 @@
-use std::sync::{Arc, Mutex};
+use std::{path::Path, sync::{Arc, Mutex}};
 
 use config::path_resolver::init_app_paths;
+use config::config_handler::Config;
 use controllers::conversation_controller::ConversationController;
 use tauri::{Manager, State, Window, Emitter};
 
@@ -51,6 +52,30 @@ fn get_conversation_ids(state: State<'_, Arc<Mutex<ConversationController>>>) ->
     }
 }
 
+#[tauri::command]
+fn check_model_exists(window: Window, state: State<'_, Arc<Mutex<ConversationController>>>) {
+    let state_arc = Arc::clone(&state.inner());
+    let window_for_thread = window.clone();
+    let config = match state_arc.lock() {
+        Ok(controller) => {
+            controller.config.clone()
+        }
+        Err(_) => {
+            let _ = window_for_thread.emit("downloading-model", false);
+            eprintln!("Failed to acquire controller lock in check model exists");
+            return;
+        }
+    };
+    let path = &config.get_model_path();
+    let dest_path = Path::new(&path);
+    if dest_path.exists() {
+        let _ = window.emit("download-status", "downloaded");
+        initialize_inference(config, state_arc, window_for_thread);
+    } else {
+        let _ = window.emit("download-status", "awaitingUser");
+    }
+}
+
 /// Ensure model is available. This spawns a background thread to download the model
 /// if it's missing and emits `downloading-model` events to the window. Returns immediately.
 #[tauri::command]
@@ -87,25 +112,7 @@ fn ensure_model(window: Window, state: tauri::State<Arc<Mutex<ConversationContro
             return;
         }
 
-        // Initialize inference (may be expensive) without holding the controller lock.
-        match Inference::init(&config) {
-            Ok(inference) => {
-                // Reacquire the lock only to set the inference instance.
-                match state_arc.lock() {
-                    Ok(mut controller) => {
-                        controller.set_inference(inference);
-                    }
-                    Err(_) => {
-                        eprintln!("Failed to acquire controller lock to set inference");
-                        let _ = window_for_thread.emit("downloading-model", false);
-                    }
-                }
-            }
-            Err(e) => {
-                eprintln!("Inference init failed: {}", e);
-                let _ = window_for_thread.emit("downloading-model", false);
-            }
-        }
+        initialize_inference(config, state_arc, window_for_thread);
     });
     Ok(())
 }
@@ -155,7 +162,30 @@ pub fn run() {
             ensure_model,
             get_conversation,
             delete_conversation,
+            check_model_exists,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
+}
+
+fn initialize_inference(config: Config, state_arc: Arc<Mutex<ConversationController>>, window_for_thread: Window) {
+    // Initialize inference (may be expensive) without holding the controller lock.
+    match Inference::init(&config) {
+        Ok(inference) => {
+            // Reacquire the lock only to set the inference instance.
+            match state_arc.lock() {
+                Ok(mut controller) => {
+                    controller.set_inference(inference);
+                }
+                Err(_) => {
+                    eprintln!("Failed to acquire controller lock to set inference");
+                    let _ = window_for_thread.emit("downloading-model", false);
+                }
+            }
+        }
+        Err(e) => {
+            eprintln!("Inference init failed: {}", e);
+            let _ = window_for_thread.emit("downloading-model", false);
+        }
+    }
 }
