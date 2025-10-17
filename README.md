@@ -1,6 +1,6 @@
 # Breve
 
-Breve is a cross-platform desktop application built using [Tauri](https://tauri.app/), [Vue 3](https://vuejs.org/), and [TypeScript](https://www.typescriptlang.org/). It provides a conversational interface that allows users to create, manage, and continue conversations, storing all data locally using SQLite through a Rust backend.
+Breve is a cross-platform application built using [Tauri](https://tauri.app/), [Vue 3](https://vuejs.org/), and [TypeScript](https://www.typescriptlang.org/). It provides a conversational interface that allows users to create, manage, and continue conversations, storing all data locally using SQLite through a Rust backend.
 
 ## Features
 
