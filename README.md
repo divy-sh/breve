@@ -4,12 +4,13 @@ Breve is a cross-platform application built using [Tauri](https://tauri.app/), [
 
 ## Features
 
+- Run LLMs locally on any device, without internet connection
+- Calculate maximum context length and query length based on Device memory
 - Cross-platform application using Tauri and Vue 3
 - Create, update, and delete conversations
 - Persist conversations locally in SQLite
 - Rust backend for secure, high-performance operations
 - Hot-reloading and easy development experience
-- Calculate maximum context length and query length based on Device memory
 
 ## Screenshots
 ![alt text](media/screenshot_1.png)
