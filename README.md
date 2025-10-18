@@ -4,7 +4,7 @@ Breve is a cross-platform application built using [Tauri](https://tauri.app/), [
 
 ## Features
 
-- Cross-platform app using Tauri and Vue 3
+- Cross-platform application using Tauri and Vue 3
 - Create, update, and delete conversations
 - Persist conversations locally in SQLite
 - Rust backend for secure, high-performance operations
