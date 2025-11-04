@@ -73,6 +73,11 @@ npm run tauri build
 
 ### Packaging
 
+#### Setup
+- Intall android sdk, and export its path - export ANDROID_HOME "android/"
+- Intall android ndk, and export its path - export NDK_HOME "android/ndk/ndk-version"
+- Run npm run tauri android init
+
 To package for android:
 ```sh
 npm run tauri android build -- --apk
