@@ -38,6 +38,7 @@
     },
       "android": {
         "minSdkVersion": 28,
+        "autoIncrementVersionCode": true,
         "versionCode": 100
       }
     }
