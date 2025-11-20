@@ -1,5 +1,3 @@
-use opencl3::device::{CL_DEVICE_TYPE_GPU, Device, get_all_devices};
-
 use crate::config::path_resolver;
 
 #[derive(Clone)]
@@ -14,8 +12,10 @@ pub struct Config {
 
 impl Config {
     pub fn init() -> Result<Config, String> {
-        let (global_mem_bytes, _) = Config::calculate_device_memory();
+        // Disabling for now until we can better handle systems without OpenCL
+        // let (global_mem_bytes, _) = Config::calculate_device_memory();
 
+        let global_mem_bytes: u64 = 4 * 1024 * 1024 * 1024; // Assume 8GB for now
         // Memory usage estimates
         let model_size_bytes: u64 = 1024 * 1024 * 1024; //1GB quantized model
         let memory_for_context = global_mem_bytes.saturating_sub(model_size_bytes);
@@ -65,20 +65,28 @@ impl Config {
         path_resolver::paths().app_local_data(&self.db_name).unwrap().to_str().unwrap().to_string()
     }
 
-    fn calculate_device_memory() -> (u64, u64) {
-        let devices = get_all_devices(CL_DEVICE_TYPE_GPU).unwrap();
+    // fn calculate_device_memory() -> (u64, u64) {
+    //     let devices = match get_all_devices(CL_DEVICE_TYPE_GPU) {
+    //         Ok(gpu_devices) => gpu_devices,
+    //         Err(_) => match get_all_devices(CL_DEVICE_TYPE_ALL) {
+    //             Ok(all_devices) => all_devices,
+    //             Err(e) => {
+    //                 panic!("Failed to get OpenCL devices: {:?}", e);
+    //             }
+    //         }
+    //     };
 
-        let mut global_mem: u64 = 0;
-        let mut local_mem: u64 = 0;
+    //     let mut global_mem: u64 = 0;
+    //     let mut local_mem: u64 = 0;
 
-        for (_, device_id) in devices.iter().enumerate() {
-            let device = Device::new(*device_id);
+    //     for (_, device_id) in devices.iter().enumerate() {
+    //         let device = Device::new(*device_id);
 
-            global_mem = device.global_mem_size().unwrap();
-            local_mem = device.local_mem_size().unwrap();
-            break;
-        }
+    //         global_mem = device.global_mem_size().unwrap();
+    //         local_mem = device.local_mem_size().unwrap();
+    //         break;
+    //     }
 
-        (global_mem, local_mem)
-    }
+    //     (global_mem, local_mem)
+    // }
 }
