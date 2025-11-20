@@ -1,4 +1,5 @@
 use llama_cpp_2::context::params::LlamaContextParams;
+use llama_cpp_2::context::LlamaContext;
 use llama_cpp_2::llama_backend::LlamaBackend;
 use llama_cpp_2::llama_batch::LlamaBatch;
 use llama_cpp_2::model::LlamaModel;
@@ -8,14 +9,24 @@ use llama_cpp_2::sampling::LlamaSampler;
 use llama_cpp_2::token::LlamaToken;
 use std::io::Write;
 use std::num::NonZero;
+use std::sync::OnceLock;
 use tauri::{Emitter, Window};
 
 use super::conversation::Conversation;
 use crate::config::config_handler::Config;
 
+// 1. Global Singleton Container to hold Model and Backend
+struct GlobalLlama {
+    backend: LlamaBackend,
+    model: LlamaModel,
+}
+
+// The static instance (initialized once)
+static LLAMA_GLOBAL: OnceLock<GlobalLlama> = OnceLock::new();
+
 pub struct Inference {
-    pub model: LlamaModel,
-    pub backend: LlamaBackend,
+    // The context borrows from the static GlobalLlama, so it has a 'static lifetime
+    pub ctx: LlamaContext<'static>,
     pub batch_size: i32,
     pub max_context_length: i32,
     pub max_output_length: i32,
@@ -23,46 +34,57 @@ pub struct Inference {
 
 impl Inference {
     pub fn init(config: &Config) -> Result<Inference, String> {
-        let backend = match LlamaBackend::init() {
-            Ok(b) => b,
-            Err(e) => {
-                eprintln!("Backend init error: {:?}", e);
-                return Err(format!("Backend init error: {:?}", e));
-            }
-        };
-        let model = LlamaModel::load_from_file(
-            &backend,
-            config.get_model_path(),
-            &LlamaModelParams::default(),
-        )
-        .map_err(|e| {
-            eprintln!("Model load error: {:?}", e);
-            format!("Model load error: {:?}", e)
-        })?;
+        // 2. Initialize the Global Model/Backend only if it doesn't exist yet
+        let global_resources = LLAMA_GLOBAL.get_or_init(|| {
+            let backend = LlamaBackend::init().expect("Backend init failed");
+            
+            let model = LlamaModel::load_from_file(
+                &backend,
+                config.get_model_path(),
+                &LlamaModelParams::default(),
+            )
+            .expect("Model load failed");
 
-        return Ok(Inference {
-            model: model,
-            backend: backend,
+            GlobalLlama { backend, model }
+        });
+
+        // 3. Create the Context (Session) once, referencing the global model
+        let ctx_params = LlamaContextParams::default()
+            .with_n_batch(config.batch_size.try_into().unwrap())
+            .with_n_ctx(Some(
+                NonZero::try_from(config.max_context_length as u32).unwrap(),
+            ));
+
+        let ctx = global_resources.model
+            .new_context(&global_resources.backend, ctx_params)
+            .map_err(|e| format!("Session creation error: {:?}", e))?;
+
+        println!(
+            "Inference initialized. Max Context: {}, Max Output: {}",
+            config.max_context_length, config.max_context_size
+        );
+
+        Ok(Inference {
+            ctx,
             batch_size: config.batch_size,
             max_context_length: config.max_context_length,
             max_output_length: config.max_context_size,
-        });
+        })
     }
 
     pub fn generate_text(&mut self, conv: &Conversation, window: Window) -> Result<String, String> {
-        println!("max_context_length: {}, max_output_length: {}", self.max_context_length, self.max_output_length);
-        let ctx_params = LlamaContextParams::default()
-            .with_n_batch(self.batch_size.try_into().unwrap())
-            .with_n_ctx(Some(
-                NonZero::try_from(self.max_context_length as u32).unwrap(),
-            ));
-        let mut ctx = self
-            .model
-            .new_context(&self.backend, ctx_params)
-            .map_err(|e| format!("Session creation error: {:?}", e))?;
+        // Access the model from the global singleton
+        let global = LLAMA_GLOBAL.get().ok_or("Global model not initialized")?;
+        let model = &global.model;
+
+        // CRITICAL: Clear the KV cache because format_prompt sends the WHOLE history again.
+        // If you don't do this, the model sees the previous messages duplicated.
+        self.ctx.clear_kv_cache();
 
         let mut batch = LlamaBatch::new(self.batch_size as usize, 8);
-        let tokens_list = match self.format_prompt(conv) {
+        
+        // Pass the global model to the helper
+        let tokens_list = match self.format_prompt(conv, model) {
             Ok(t) => t,
             Err(e) => return Err(e),
         };
@@ -72,7 +94,7 @@ impl Inference {
             batch.add(token, i, &[0], i == last_index).unwrap();
         }
 
-        if let Err(e) = ctx.decode(&mut batch) {
+        if let Err(e) = self.ctx.decode(&mut batch) {
             return Err(format!("Initial decode failed: {:?}", e));
         }
 
@@ -80,16 +102,20 @@ impl Inference {
         let mut decoder = encoding_rs::UTF_8.new_decoder();
         let mut sampler = LlamaSampler::greedy();
         let mut message = String::new();
+        
         while n_cur <= self.batch_size && (n_cur - batch.n_tokens()) <= self.max_output_length {
-            let token = sampler.sample(&ctx, batch.n_tokens() - 1);
+            let token = sampler.sample(&self.ctx, batch.n_tokens() - 1);
             sampler.accept(token);
-            if token == self.model.token_eos() {
+            
+            if token == model.token_eos() {
                 break;
             }
-            let output_bytes = self.model.token_to_bytes(token, Special::Tokenize).unwrap();
+            
+            let output_bytes = model.token_to_bytes(token, Special::Tokenize).unwrap();
             let mut output_string = String::with_capacity(32);
             let _ = decoder.decode_to_string(&output_bytes, &mut output_string, false);
             message += &output_string;
+            
             if let Err(e) = window.emit("llm-stream", output_string.clone()) {
                 eprintln!("Emit error: {:?}", e);
             }
@@ -102,7 +128,7 @@ impl Inference {
             }
             n_cur += 1;
 
-            if let Err(e) = ctx.decode(&mut batch) {
+            if let Err(e) = self.ctx.decode(&mut batch) {
                 eprintln!("Decode failed at n_cur = {}: {:?}", n_cur, e);
                 break;
             }
@@ -110,10 +136,12 @@ impl Inference {
         Ok(message)
     }
 
-    pub fn format_prompt(&self, conv: &Conversation) -> Result<Vec<LlamaToken>, String> {
+    // Updated signature to accept &LlamaModel
+    pub fn format_prompt(&self, conv: &Conversation, model: &LlamaModel) -> Result<Vec<LlamaToken>, String> {
         let system_prompt = "You are a friendly AI assistant named Breve.
         You are designed to respond to user queries in a friendly and empathetic manner.
         Answer without making up facts or hallucinating.";
+        
         let mut formatted_prompt = format!(
             "<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n{}\n<|eot_id|>",
             system_prompt
@@ -142,8 +170,12 @@ impl Inference {
         }
 
         formatted_prompt.push_str(&end_str);
-        self.model
+        
+        model
             .str_to_token(&formatted_prompt, AddBos::Always)
             .map_err(|e| format!("Tokenization failed: {:?}", e))
     }
 }
+
+unsafe impl Send for Inference {}
+unsafe impl Sync for Inference {}
