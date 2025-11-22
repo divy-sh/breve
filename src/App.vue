@@ -7,10 +7,12 @@ import ChatContainer from "./components/ChatContainer.vue";
 import { useConversations } from "./composables/useConversations";
 import DownloadingModel from "./components/DownloadingModel.vue";
 import DownloadPage from "./components/DownloadPage.vue";
+import SettingsPanel from './components/SettingsPanel.vue';
 
-// Types
-
-// State
+const showSettings = ref(false);
+const toggleSettings = () => {
+  showSettings.value = !showSettings.value;
+};
 const darkMode = ref(window.matchMedia('(prefers-color-scheme: dark)').matches);
 const sidebarOpen = ref(window.innerWidth > 768);
 
@@ -116,6 +118,8 @@ provide('handleSendMessage', handleSendMessage);
       :conversations="conversations" 
       :currentConversationId="currentConversation?.id"
       :isOpen="sidebarOpen"
+      :showSettings="showSettings"
+      @toggle-settings="toggleSettings"
       @toggle="toggleSidebar"
       @load-conversation="loadConversation"
       @create-new="createNewChat"
@@ -129,6 +133,7 @@ provide('handleSendMessage', handleSendMessage);
       @toggle-sidebar="toggleSidebar"
       @send-message="handleSendMessage"
     />
+    <SettingsPanel v-if="showSettings" @close="showSettings = false" />
   </div>
 </template>
 

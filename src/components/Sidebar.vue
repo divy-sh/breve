@@ -1,12 +1,6 @@
 <script setup lang="ts">
 import type { ConversationSummary } from '../types';
 import { ref } from 'vue';
-import SettingsPanel from './SettingsPanel.vue';
-
-const showSettings = ref(false);
-const toggleSettings = () => {
-  showSettings.value = !showSettings.value;
-};
 
 // Props
 const props = defineProps<{
@@ -24,6 +18,7 @@ const emit = defineEmits<{
   (e: 'load-conversation', id: string): void;
   (e: 'create-new'): void;
   (e: 'delete-conversation', id: string): void;
+  (e: 'toggle-settings'): void;
 }>();
 
 // Methods
@@ -56,7 +51,7 @@ const handleMenuClick = (id: string) => {
         :class="{ active: currentConversationId === convo.id }"
       >
         <span class="convo-title">{{ convo.title }}</span>
-        <div @click.stop="handleMenuClick(convo.id)">⋮</div>
+        <div class="chat-context-btn" @click.stop="handleMenuClick(convo.id)"><i class="pi pi-ellipsis-v"></i></div>
         <div v-if="openDropdownFor === convo.id" class="dropdown">
           <div @click="emit('delete-conversation', convo.id)">Delete</div>
         </div>
@@ -66,10 +61,9 @@ const handleMenuClick = (id: string) => {
         No conversations yet
       </div>
     </div>
-    <div class="bottom-bar" @click="toggleSettings">
-      ⚙️ Settings
+    <div class="bottom-bar" @click="emit('toggle-settings')">
+      <i class="pi pi-cog"></i>
     </div>
-  <SettingsPanel v-if="showSettings" @close="showSettings = false" />
   </aside>
 </template>
 
@@ -107,6 +101,14 @@ const handleMenuClick = (id: string) => {
 
 .new-chat-btn:hover {
   background-color: var(--secondary-color);
+}
+
+.chat-context-btn {
+  margin: 0;
+  padding: .5rem;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
 }
 
 .conversation-list {
