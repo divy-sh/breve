@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, watch, nextTick } from 'vue';
+import { Window } from "@tauri-apps/api/window";
 
 // Props
 const props = defineProps<{
@@ -38,7 +39,20 @@ function autoResize() {
   el.style.height = el.scrollHeight + 'px';
 }
 
-onMounted(autoResize);
+onMounted(async () => {
+  const appWindow = Window.getCurrent();
+  autoResize();
+  nextTick(() => {
+    setTimeout(() => {
+      textareaRef.value?.focus();
+    }, 50)
+  });
+    appWindow.onFocusChanged(({ payload } : any) => {
+    if (payload) {
+      textareaRef.value?.focus();
+    }
+  });
+});
 watch(inputText, autoResize);
 </script>
 
