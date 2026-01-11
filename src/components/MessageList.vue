@@ -43,56 +43,25 @@
 </script>
 
 <template>
-  <div class="messages-container" ref="messagesContainer">
-    <k-block v-if="!props.conversation" class="welcome-screen">
-      <h2>Hello There!</h2>
-      <p>Start a new conversation by typing a message below.</p>
+  <div
+    class="flex-1 overflow-y-auto flex flex-col min-h-0"
+  >
+    <k-block v-if="!props.conversation" class="flex-shrink-0">
+      <h2 class="text-xl font-semibold">Hello There!</h2>
+      <p class="text-sm">Start a new conversation by typing a message below.</p>
     </k-block>
     
     <template v-else>
-      <k-block inset strong
-        v-for="(message, index) in messages" 
-        :key="index"
-        class="message"
-        :class="message.role"
+      <k-block strong inset
+        v-for="(message, index) in messages" :key="index" :class="['max-w-[80%] flex-shrink-0 m-4',
+          message.role === 'user' ? 'self-end' : 'self-start'
+        ]"
       >
-        <div class="message-header">
-          <span class="message-role">{{ message.role === 'user' ? 'You' : 'Breve' }}</span>
+        <div class="font-semibold text-sm">
+          <span>{{ message.role === 'user' ? 'You' : 'Breve' }}</span>
         </div>
-        <div class="message-content">{{ message.content }}</div>
+        <div class="whitespace-pre-wrap break-words">{{ message.content }}</div>
       </k-block>
     </template>
   </div>
 </template>
-
-<style scoped>
-.messages-container {
-  flex: 1;
-  overflow-y: auto;
-  padding: 1rem;
-  display: flex;
-  flex-direction: column;
-  scroll-behavior: smooth;
-}
-
-.message {
-  margin-bottom: 1rem;
-  padding: 1rem;
-  border-radius: 0.5rem;
-  max-width: 80%;
-}
-
-.message.user {
-  align-self: flex-end;
-}
-
-.message.assistant {
-  align-self: flex-start;
-}
-
-.message-header {
-  margin-bottom: 0.5rem;
-  font-weight: 600;
-  font-size: 0.875rem;
-}
-</style>

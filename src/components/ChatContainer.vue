@@ -27,7 +27,7 @@
 </script>
 
 <template>
-  <k-page>
+  <k-page class="min-h-screen flex flex-col">
     <k-navbar :title="conversation?.title || 'New Conversation'">
       <template #left>
         <k-button clear @click="emit('toggle-sidebar')">
@@ -42,13 +42,14 @@
       </template>
     </k-navbar>
     
-    <div class="flex-box">
-      <MessageList 
+    <div class="flex-1 flex flex-col min-h-0">
+      <MessageList
         :conversation="conversation"
         :streamingContent="streamingContent" 
         :isLoading="isLoading"
+        class="flex-1"
       />
-      <MessageInput class="fixed bottom-0"
+      <MessageInput
         :isLoading="isLoading"
         @send="emit('send-message', $event)"
       />

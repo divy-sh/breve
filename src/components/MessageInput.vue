@@ -2,12 +2,7 @@
   import { ref, onMounted, watch, nextTick } from 'vue';
   import { Window } from "@tauri-apps/api/window";
   import {
-    kNavbar,
-    kPanel,
-    kBlock,
-    kButton,
-    kMenuList,
-    kMenuListItem
+    kBlock
   } from 'konsta/vue';
 
   // Props
@@ -65,73 +60,26 @@
 </script>
 
 <template>
-  <k-block class="m-0 p-0 input-area" strong inset>
-    <form @submit.prevent="handleSubmit">
-      <textarea 
-        v-model="inputText" 
-        placeholder="Type your message..." 
+  <k-block class="m-0 p-4 flex-shrink-0 bg-transparent" strong inset>
+    <form @submit.prevent="handleSubmit" class="flex gap-2 items-end">
+      <textarea
+        v-model="inputText"
+        placeholder="Type your message..."
         @keydown="handleKeydown"
         @input="autoResize"
         :disabled="isLoading"
         ref="textareaRef"
+        class="flex-1 p-3 border rounded resize-none h-14 bg-transparent text-current overflow-hidden"
       ></textarea>
-      <button type="submit" :disabled="isLoading || !inputText.trim()">
+      <button
+        type="submit"
+        :disabled="isLoading || !inputText.trim()"
+        class="px-4 py-2 bg-primary text-white rounded font-semibold disabled:opacity-50"
+      >
         {{ isLoading ? '...' : 'Send' }}
       </button>
     </form>
-    <div class="input-hint">Press Enter to send, Shift+Enter for new line</div>
+    <div class="mt-2 text-xs text-right">Press Enter to send, Shift+Enter for new line</div>
   </k-block>
 </template>
 
-<style scoped>
-.input-area {
-  padding: 1rem;
-  border-top: 1px solid var(--primary-color);
-}
-
-.input-area form {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.input-area textarea {
-  flex: 1;
-  padding: 0.75rem;
-  border: 1px solid var(--primary-color);
-  border-radius: 0.5rem;
-  resize: none;
-  height: 60px;
-  font-family: inherit;
-  font-size: 1rem;
-  background-color: var(--background-color);
-  color: var(--text-color);
-  overflow: hidden;
-}
-
-.input-area button {
-  padding: 0 1rem;
-  background-color: var(--primary-color);
-  color: var(--text-color);
-  border: none;
-  border-radius: 0.5rem;
-  cursor: pointer;
-  font-weight: 600;
-  transition: background-color 0.2s;
-}
-
-.input-area button:hover:not(:disabled) {
-  background-color: var(--secondary-color);
-}
-
-.input-area button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.input-hint {
-  margin-top: 0.5rem;
-  font-size: 0.75rem;
-  text-align: right;
-  color: var(--secondary-color);
-}
-</style>
