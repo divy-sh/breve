@@ -1,191 +1,96 @@
 <script setup lang="ts">
-import type { ConversationSummary } from '../types';
-import { ref } from 'vue';
 
-// Props
-const props = defineProps<{
-  conversations: ConversationSummary[];
-  currentConversationId?: string;
-  isOpen: boolean;
-}>();
+  import {
+    kNavbar,
+    kPanel,
+    kBlock,
+    kButton,
+    kMenuList,
+    kMenuListItem
+  } from 'konsta/vue';
+  import type { ConversationSummary } from '../types';
+  import { ref, watch } from 'vue';
 
-// Local State
-const openDropdownFor = ref<string | null>(null);
+  // Props
+  const props = defineProps<{
+    conversations: ConversationSummary[];
+    currentConversationId?: string;
+    isOpen: boolean;
+  }>();
 
-// Emits
-const emit = defineEmits<{
-  (e: 'toggle'): void;
-  (e: 'load-conversation', id: string): void;
-  (e: 'create-new'): void;
-  (e: 'delete-conversation', id: string): void;
-  (e: 'toggle-settings'): void;
-}>();
+  // Local State
+  const openDropdownFor = ref<string | null>(null);
 
-// Methods
-const handleMenuClick = (id: string) => {
-  console.log(id, id == props.currentConversationId)
-  if (id !== props.currentConversationId) {
-    emit('load-conversation', id);
-  }
+  // Emits
+  const emit = defineEmits<{
+    (e: 'toggle'): void;
+    (e: 'load-conversation', id: string): void;
+    (e: 'create-new'): void;
+    (e: 'delete-conversation', id: string): void;
+  }>();
+
+  // Methods
+  const handleMenuClick = (id: string) => {
+    // Only toggle the dropdown; don't change conversation selection.
     openDropdownFor.value = openDropdownFor.value === id ? null : id;
-};
+  };
+
+  const deleteConversation = (id: string) => {
+    emit('delete-conversation', id);
+    openDropdownFor.value = null;
+  };
+
+  // Clear any open dropdown when sidebar closes
+  watch(() => props.isOpen, (val) => {
+    if (!val) openDropdownFor.value = null;
+  });
+
+  // Clear dropdown when current conversation changes
+  watch(() => props.currentConversationId, () => {
+    openDropdownFor.value = null;
+  });
 </script>
 
 <template>
-  <aside class="sidebar" :class="{ open: isOpen }">
-    <div class="sidebar-header">
-      <h2>Conversations</h2>
-      <button @click="emit('toggle')" class="sidebar-toggle mobile-only">×</button>
-    </div>
-
-    <button @click="emit('create-new')" class="new-chat-btn">
-      + New Chat
-    </button>
-
-    <div class="conversation-list">
-      <div 
-        v-for="convo in conversations" 
-        :key="convo.id" 
-        @click="emit('load-conversation', convo.id)"
-        class="conversation-item"
-        :class="{ active: currentConversationId === convo.id }"
-      >
-        <span class="convo-title">{{ convo.title }}</span>
-        <div class="chat-context-btn" @click.stop="handleMenuClick(convo.id)"><i class="pi pi-ellipsis-v"></i></div>
-        <div v-if="openDropdownFor === convo.id" class="dropdown">
-          <div @click="emit('delete-conversation', convo.id)">Delete</div>
-        </div>
-      </div>
-
-      <div v-if="conversations.length === 0" class="no-conversations">
+  <k-panel
+    side="left"
+    floating
+    :opened="isOpen"
+    @backdropclick="() => (emit('toggle'))"
+  >
+    <k-navbar title="Chats">
+      <template #right>
+        <k-button clear @click="emit('toggle')">
+          <i class="pi pi-times"></i>
+        </k-button>
+      </template>
+    </k-navbar>
+    <k-block>
+      <k-button @click="emit('create-new'); emit('toggle')" class="new-chat-btn">
+        New Chat
+      </k-button>
+    </k-block>
+          <k-menu-list>
+        <k-menu-list-item
+          v-for="convo in conversations"
+          :key="convo.id"
+          :title="convo.title || 'Untitled Chat'"
+            :active="isOpen && currentConversationId === convo.id"
+            @click="emit('load-conversation', convo.id); emit('toggle')"
+        >
+          <template #after>
+            <k-button clear @click.stop="handleMenuClick(convo.id)">
+              <i class="pi pi-ellipsis-v"></i>
+            </k-button>
+            <k-button clear v-if="openDropdownFor === convo.id" @click="deleteConversation(convo.id)">
+              Delete
+            </k-button>
+          
+          </template>
+        </k-menu-list-item>
+      </k-menu-list>
+      <div v-if="conversations.length === 0" class="no-conversations text-center">
         No conversations yet
       </div>
-    </div>
-    <div class="bottom-bar" @click="emit('toggle-settings')">
-      <i class="pi pi-cog"></i>
-    </div>
-  </aside>
+  </k-panel>
 </template>
-
-<style scoped>
-/* Sidebar styles */
-.sidebar {
-  background-color: var(--background-color);
-  width: 280px;
-  border-right: 1px solid var(--primary-color);
-  display: flex;
-  flex-direction: column;
-  z-index: 10;
-}
-
-.sidebar-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem;
-  border-bottom: 1px solid var(--primary-color);
-  color: var(--secondary-color);
-}
-
-.new-chat-btn {
-  margin: 1rem;
-  padding: 0.75rem;
-  background-color: var(--primary-color);
-  color: var(--text-color);
-  border: none;
-  border-radius: 0.5rem;
-  cursor: pointer;
-  font-weight: 600;
-  transition: background-color 0.2s;
-}
-
-.new-chat-btn:hover {
-  background-color: var(--secondary-color);
-}
-
-.chat-context-btn {
-  margin: 0;
-  padding: .5rem;
-  border: none;
-  border-radius: 0.5rem;
-  cursor: pointer;
-}
-
-.conversation-list {
-  flex: 1;
-  overflow-y: auto;
-  padding: 0.5rem;
-}
-
-.conversation-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.75rem;
-  border-radius: 0.5rem;
-  margin-bottom: 0.5rem;
-  cursor: pointer;
-  transition: background-color 0.2s;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  color: var(--text-color);
-  position: relative;
-}
-
-.conversation-item:hover {
-  background-color: var(--primary-color);
-}
-
-.conversation-item.active {
-  background-color: var(--primary-color);
-  color: var(--text-color);
-}
-
-.no-conversations {
-  padding: 1rem;
-  text-align: center;
-  color: var(--text-color);
-}
-
-.sidebar-toggle {
-  background: none;
-  border: none;
-  font-size: 1.5rem;
-  cursor: pointer;
-  color: var(--text-color);
-}
-
-.dropdown {
-  position: absolute;
-  top: 100%;
-  right: 0;
-  background-color: var(--primary-color);
-  color: var(--text-color);
-  padding: 0.5rem 1rem;
-  border-radius: 0.5rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  z-index: 5;
-}
-
-.bottom-bar {
-  border-top: 1px solid var(--primary-color);
-  padding: 1rem;
-  text-align: center;
-  align-items: center;
-  color: var(--text-color);
-}
-
-/* Mobile styles */
-@media (max-width: 768px) {
-  .sidebar {
-    position: absolute;
-    height: 100%;
-    transform: translateX(-100%);
-    transition: transform 0.3s ease;
-  }
-
-  .sidebar.open {
-    transform: translateX(0);
-  }
-}
-</style>

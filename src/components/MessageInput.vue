@@ -1,63 +1,71 @@
 <script setup lang="ts">
-import { ref, onMounted, watch, nextTick } from 'vue';
-import { Window } from "@tauri-apps/api/window";
+  import { ref, onMounted, watch, nextTick } from 'vue';
+  import { Window } from "@tauri-apps/api/window";
+  import {
+    kNavbar,
+    kPanel,
+    kBlock,
+    kButton,
+    kMenuList,
+    kMenuListItem
+  } from 'konsta/vue';
 
-// Props
-const props = defineProps<{
-  isLoading: boolean;
-}>();
+  // Props
+  const props = defineProps<{
+    isLoading: boolean;
+  }>();
 
-// Emits
-const emit = defineEmits<{
-  (e: 'send', message: string): void;
-}>();
+  // Emits
+  const emit = defineEmits<{
+    (e: 'send', message: string): void;
+  }>();
 
-// State
-const inputText = ref("");
-const textareaRef = ref<HTMLTextAreaElement | null>(null);
+  // State
+  const inputText = ref("");
+  const textareaRef = ref<HTMLTextAreaElement | null>(null);
 
-// Methods
-function handleSubmit() {
-  if (inputText.value.trim() && !props.isLoading) {
-    emit('send', inputText.value);
-    inputText.value = "";
-    nextTick(autoResize); // reset height after clearing
-  }
-}
-
-function handleKeydown(e: KeyboardEvent) {
-  if (e.key === 'Enter' && !e.shiftKey) {
-    e.preventDefault();
-    handleSubmit();
-  }
-}
-
-function autoResize() {
-  const el = textareaRef.value;
-  if (!el) return;
-  el.style.height = 'auto';
-  el.style.height = el.scrollHeight + 'px';
-}
-
-onMounted(async () => {
-  const appWindow = Window.getCurrent();
-  autoResize();
-  nextTick(() => {
-    setTimeout(() => {
-      textareaRef.value?.focus();
-    }, 50)
-  });
-    appWindow.onFocusChanged(({ payload } : any) => {
-    if (payload) {
-      textareaRef.value?.focus();
+  // Methods
+  function handleSubmit() {
+    if (inputText.value.trim() && !props.isLoading) {
+      emit('send', inputText.value);
+      inputText.value = "";
+      nextTick(autoResize); // reset height after clearing
     }
+  }
+
+  function handleKeydown(e: KeyboardEvent) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSubmit();
+    }
+  }
+
+  function autoResize() {
+    const el = textareaRef.value;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = el.scrollHeight + 'px';
+  }
+
+  onMounted(async () => {
+    const appWindow = Window.getCurrent();
+    autoResize();
+    nextTick(() => {
+      setTimeout(() => {
+        textareaRef.value?.focus();
+      }, 50)
+    });
+      appWindow.onFocusChanged(({ payload } : any) => {
+      if (payload) {
+        textareaRef.value?.focus();
+      }
+    });
   });
-});
-watch(inputText, autoResize);
+  watch(inputText, autoResize);
 </script>
 
 <template>
-  <div class="input-area">
+  <k-block class="m-0 p-0 input-area" strong inset>
     <form @submit.prevent="handleSubmit">
       <textarea 
         v-model="inputText" 
@@ -72,7 +80,7 @@ watch(inputText, autoResize);
       </button>
     </form>
     <div class="input-hint">Press Enter to send, Shift+Enter for new line</div>
-  </div>
+  </k-block>
 </template>
 
 <style scoped>

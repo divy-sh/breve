@@ -1,55 +1,8 @@
-:root {
-  --primary-color: #31363F;
-  --secondary-color: #76ABAE;
-  --background-color: #222831;
-  --text-color: #EEEEEE;
-}
+@import "tailwindcss";
+@import 'konsta/vue/theme.css';
 
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
+@import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,400;0,500;0,700;1,400;1,500;1,700&display=swap');
 
-html {
-  overscroll-behavior: none;
-  overflow: hidden;
-  height: 100%;
-  margin: 0;
-}
-
-body {
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
-  font-size: 16px;
-  line-height: 1.5;
-  color: var(--primary-color);
-  background-color: var(--background-color);
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  overscroll-behavior: none;
-  overflow: hidden;
-  height: 100%;
-  margin: 0;
-}
-
-/* Utility classes for responsive design */
-@media (max-width: 768px) {
-  .desktop-hidden {
-    display: initial !important;
-  }
-  
-  .mobile-only {
-    display: initial !important;
-  }
-}
-
-@media (min-width: 769px) {
-  .desktop-hidden {
-    display: none !important;
-  }
-  
-  .mobile-only {
-    display: none !important;
-  }
+@theme {
+  --color-brand-primary: #76ABAE;
 }
