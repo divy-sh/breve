@@ -14,12 +14,14 @@
     conversation: Conversation | null;
     isLoading: boolean;
     streamingContent: string;
+    isDark: boolean;
   }>();
 
   // Emits
   const emit = defineEmits<{
     (e: 'toggle-sidebar'): void;
     (e: 'send-message', message: string): void;
+    (e: 'toggle-theme'): boolean;
   }>();
 
 </script>
@@ -30,6 +32,12 @@
       <template #left>
         <k-button clear @click="emit('toggle-sidebar')">
           <i class="pi pi-bars"></i>
+        </k-button>
+      </template>
+      <template #right>
+        <k-button clear @click="emit('toggle-theme')">
+          <i v-if="!isDark" class="pi pi-moon"></i>
+          <i v-else class="pi pi-sun"></i>
         </k-button>
       </template>
     </k-navbar>
