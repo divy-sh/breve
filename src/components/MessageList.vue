@@ -54,16 +54,19 @@
 </script>
 
 <template>
-  <div class="flex-1 overflow-y-auto flex flex-col min-h-0 px-4" ref="messagesContainer">
+  <div class="flex-1 overflow-y-auto flex flex-col min-h-0 p-4" ref="messagesContainer">
     <k-messages v-if="props.conversation">
       <k-messages-title>
         <b>{{ currentDay }}</b>
       </k-messages-title>
-      <k-message
+      <k-message 
         v-for="(message, index) in messages"
         :key="index"
         :type="message.role === 'user' ? 'sent' : 'received'"
         :name="message.role === 'user' ? 'You' : 'Breve'"
+        :colors="{
+          bubbleReceivedMd: 'bg-[#e5e5ea] dark:bg-[#252525]'
+        }"
         class="max-w-[90%]"
       >
         <template #text>

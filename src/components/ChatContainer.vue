@@ -2,7 +2,7 @@
   import {
     kPage,
     kNavbar,
-    kButton,
+    kLink,
   } from 'konsta/vue';
 
   import MessageList from './MessageList.vue';
@@ -28,17 +28,17 @@
 
 <template>
   <k-page class="min-h-screen flex flex-col">
-    <k-navbar :title="conversation?.title || 'New Conversation'">
+    <k-navbar :title="conversation?.title || 'New Conversation'" class="ios:pb-4">
       <template #left>
-        <k-button clear @click="emit('toggle-sidebar')">
+        <k-link @click="emit('toggle-sidebar')">
           <i class="pi pi-bars"></i>
-        </k-button>
+        </k-link>
       </template>
       <template #right>
-        <k-button clear @click="emit('toggle-theme')">
+        <k-link @click="emit('toggle-theme')">
           <i v-if="!isDark" class="pi pi-moon"></i>
           <i v-else class="pi pi-sun"></i>
-        </k-button>
+        </k-link>
       </template>
     </k-navbar>
     

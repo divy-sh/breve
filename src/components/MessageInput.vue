@@ -41,13 +41,12 @@ onMounted(() => {
 </script>
 
 <template>
-  <k-block class="mt-0">
+  <k-block class="m-0 p-0">
     <k-messagebar
       placeholder="Type your message..."
       :disabled="props.isLoading"
       :value="messageText"
       @input="onMessageTextChange"
-      class="bg-transparent"
     >
       <template #right>
         <k-link
@@ -59,7 +58,6 @@ onMounted(() => {
               : 'text-primary'
           ]"
         >
-          <!-- You can use your own icon here -->
           <i class="pi pi-send"></i>
         </k-link>
       </template>

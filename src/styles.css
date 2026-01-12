@@ -6,3 +6,7 @@
 @theme {
   --color-brand-primary: #76ABAE;
 }
+
+html, body {
+  overscroll-behavior: none;
+}
