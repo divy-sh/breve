@@ -79,24 +79,24 @@
         <i class="pi pi-sparkles">  New Chat</i>
       </k-button>
     </k-block>
-          <k-menu-list>
-        <k-menu-list-item
-          v-for="convo in conversations"
-          :key="convo.id"
-          :title="convo.title || 'Untitled Chat'"
-            :active="isOpen && currentConversationId === convo.id"
-            @click="emit('load-conversation', convo.id); emit('toggle')"
-        >
-          <template #after>
-            <k-button clear @click.stop="handleMenuClick(convo.id), openPopover($event.currentTarget)">
-              <i class="pi pi-ellipsis-v"></i>
-            </k-button>
-          </template>
-        </k-menu-list-item>
-      </k-menu-list>
-      <div v-if="conversations.length === 0" class="no-conversations text-center">
-        No conversations yet
-      </div>
+    <k-menu-list>
+      <k-menu-list-item
+        v-for="convo in conversations"
+        :key="convo.id"
+        :title="convo.title || 'Untitled Chat'"
+          :active="isOpen && currentConversationId === convo.id"
+          @click="emit('load-conversation', convo.id); emit('toggle')"
+      >
+        <template #after>
+          <k-button clear @click.stop="handleMenuClick(convo.id), openPopover($event.currentTarget)">
+            <i class="pi pi-ellipsis-v"></i>
+          </k-button>
+        </template>
+      </k-menu-list-item>
+    </k-menu-list>
+    <div v-if="conversations.length === 0" class="no-conversations text-center">
+      No conversations yet
+    </div>
   </k-panel>
   <k-popover
       :opened="popoverOpened"

@@ -41,7 +41,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <k-block class="m-0 p-0">
+  <k-block class="mt-0">
     <k-messagebar
       placeholder="Type your message..."
       :disabled="props.isLoading"

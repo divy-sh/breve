@@ -102,7 +102,7 @@ provide('handleSendMessage', handleSendMessage);
 </script>
 
 <template>
-  <k-app :theme="theme" safe-areas>
+  <k-app :theme="theme">
     <DownloadPage v-if="downloadStatus === 'awaitingUser'" />
     <DownloadingModel v-if="downloadStatus === 'downloading'" />
     <Sidebar v-if="downloadStatus === 'downloaded'"
