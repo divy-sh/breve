@@ -1,85 +1,68 @@
 <script setup lang="ts">
-  import { ref, onMounted, watch, nextTick } from 'vue';
-  import { Window } from "@tauri-apps/api/window";
-  import {
-    kBlock
-  } from 'konsta/vue';
+import { ref, onMounted } from 'vue'
+import { Window } from '@tauri-apps/api/window'
+import { kBlock, kMessagebar, kLink } from 'konsta/vue'
 
-  // Props
-  const props = defineProps<{
-    isLoading: boolean;
-  }>();
+// Props
+const props = defineProps<{
+  isLoading: boolean
+}>()
 
-  // Emits
-  const emit = defineEmits<{
-    (e: 'send', message: string): void;
-  }>();
+// Emits
+const emit = defineEmits<{
+  (e: 'send', message: string): void
+}>()
 
-  // State
-  const inputText = ref("");
-  const textareaRef = ref<HTMLTextAreaElement | null>(null);
+// State
+const messageText = ref('')
 
-  // Methods
-  function handleSubmit() {
-    if (inputText.value.trim() && !props.isLoading) {
-      emit('send', inputText.value);
-      inputText.value = "";
-      nextTick(autoResize); // reset height after clearing
+// Methods
+function onMessageTextChange(e: any) {
+  messageText.value = e.target.value
+}
+
+function handleSend() {
+  if (messageText.value.trim() && !props.isLoading) {
+    emit('send', messageText.value.trim())
+    messageText.value = ''
+  }
+}
+
+// Focus handling with Tauri
+onMounted(() => {
+  const appWindow = Window.getCurrent()
+
+  appWindow.onFocusChanged(({ payload }: any) => {
+    if (payload) {
+      document.querySelector('textarea')?.focus()
     }
-  }
-
-  function handleKeydown(e: KeyboardEvent) {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSubmit();
-    }
-  }
-
-  function autoResize() {
-    const el = textareaRef.value;
-    if (!el) return;
-    el.style.height = 'auto';
-    el.style.height = el.scrollHeight + 'px';
-  }
-
-  onMounted(async () => {
-    const appWindow = Window.getCurrent();
-    autoResize();
-    nextTick(() => {
-      setTimeout(() => {
-        textareaRef.value?.focus();
-      }, 50)
-    });
-      appWindow.onFocusChanged(({ payload } : any) => {
-      if (payload) {
-        textareaRef.value?.focus();
-      }
-    });
-  });
-  watch(inputText, autoResize);
+  })
+})
 </script>
 
 <template>
-  <k-block class="m-0 p-4 flex-shrink-0 bg-transparent" strong inset>
-    <form @submit.prevent="handleSubmit" class="flex gap-2 items-end">
-      <textarea
-        v-model="inputText"
-        placeholder="Type your message..."
-        @keydown="handleKeydown"
-        @input="autoResize"
-        :disabled="isLoading"
-        ref="textareaRef"
-        class="flex-1 p-3 border rounded resize-none h-14 bg-transparent text-current overflow-hidden"
-      ></textarea>
-      <button
-        type="submit"
-        :disabled="isLoading || !inputText.trim()"
-        class="px-4 py-2 bg-primary text-white rounded font-semibold disabled:opacity-50"
-      >
-        {{ isLoading ? '...' : 'Send' }}
-      </button>
-    </form>
-    <div class="mt-2 text-xs text-right">Press Enter to send, Shift+Enter for new line</div>
+  <k-block class="m-0 p-0">
+    <k-messagebar
+      placeholder="Type your message..."
+      :disabled="props.isLoading"
+      :value="messageText"
+      @input="onMessageTextChange"
+      class="bg-transparent"
+    >
+      <template #right>
+        <k-link
+          @click="handleSend"
+          :class="[
+            'px-3 py-2 font-semibold',
+            props.isLoading || !messageText.trim()
+              ? 'opacity-50 pointer-events-none'
+              : 'text-primary'
+          ]"
+        >
+          <!-- You can use your own icon here -->
+          <i class="pi pi-send"></i>
+        </k-link>
+      </template>
+    </k-messagebar>
   </k-block>
 </template>
-

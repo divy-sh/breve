@@ -6,7 +6,10 @@
     kBlock,
     kButton,
     kMenuList,
-    kMenuListItem
+    kMenuListItem,
+    kList,
+    kListItem,
+    kPopover
   } from 'konsta/vue';
   import type { ConversationSummary } from '../types';
   import { ref, watch } from 'vue';
@@ -18,9 +21,6 @@
     isOpen: boolean;
   }>();
 
-  // Local State
-  const openDropdownFor = ref<string | null>(null);
-
   // Emits
   const emit = defineEmits<{
     (e: 'toggle'): void;
@@ -29,10 +29,19 @@
     (e: 'delete-conversation', id: string): void;
   }>();
 
+  const openDropdownFor = ref<string | null>(null);
   // Methods
   const handleMenuClick = (id: string) => {
     // Only toggle the dropdown; don't change conversation selection.
     openDropdownFor.value = openDropdownFor.value === id ? null : id;
+  };
+
+  const popoverOpened = ref(false);
+  const popoverTargetRef = ref("");
+
+  const openPopover = (targetRef: any) => {
+    popoverTargetRef.value = targetRef;
+    popoverOpened.value = true;
   };
 
   const deleteConversation = (id: string) => {
@@ -67,7 +76,7 @@
     </k-navbar>
     <k-block>
       <k-button @click="emit('create-new'); emit('toggle')" class="new-chat-btn">
-        New Chat
+        <i class="pi pi-sparkles">  New Chat</i>
       </k-button>
     </k-block>
           <k-menu-list>
@@ -79,13 +88,9 @@
             @click="emit('load-conversation', convo.id); emit('toggle')"
         >
           <template #after>
-            <k-button clear @click.stop="handleMenuClick(convo.id)">
+            <k-button clear @click.stop="handleMenuClick(convo.id), openPopover($event.currentTarget)">
               <i class="pi pi-ellipsis-v"></i>
             </k-button>
-            <k-button clear v-if="openDropdownFor === convo.id" @click="deleteConversation(convo.id)">
-              Delete
-            </k-button>
-          
           </template>
         </k-menu-list-item>
       </k-menu-list>
@@ -93,4 +98,16 @@
         No conversations yet
       </div>
   </k-panel>
+  <k-popover
+      :opened="popoverOpened"
+      :target="popoverTargetRef"
+      @backdropclick="() => (popoverOpened = false)"
+    >
+      <k-list nested>
+        <k-list-item
+          title="Delete"
+          @click="() => { popoverOpened = false; deleteConversation(openDropdownFor!); }"
+        />
+      </k-list>
+    </k-popover>
 </template>
