@@ -5,7 +5,7 @@ use config::config_handler::Config;
 use controllers::conversation_controller::ConversationController;
 use tauri::{Manager, State, Window, Emitter};
 
-use crate::models::inference::Inference;
+use crate::{controllers::settings_controller::SettingsController, models::inference::Inference};
 
 pub mod config;
 pub mod controllers;
@@ -145,6 +145,28 @@ fn delete_conversation(
     }
 }
 
+#[tauri::command]
+fn get_config(key: String, state: State<'_, Arc<Mutex<SettingsController>>>,) -> Result<String, String> {
+    let state_arc = Arc::clone(&state.inner());
+    match state_arc.lock() {
+        Ok(controller) => controller
+            .get_config(key)
+            .map_err(|e| e.to_string()),
+        Err(_) => Err("Internal error: controller lock poisoned".to_string()),
+    }
+}
+
+#[tauri::command]
+fn set_config(key: String, value: String, state: State<'_, Arc<Mutex<SettingsController>>>,) -> Result<(), String> {
+    let state_arc = Arc::clone(&state.inner());
+    match state_arc.lock() {
+        Ok(controller) => controller
+            .set_config(key, value)
+            .map_err(|e| e.to_string()),
+        Err(_) => Err("Internal error: controller lock poisoned".to_string()),
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     use std::sync::Arc;
@@ -153,6 +175,7 @@ pub fn run() {
         .setup(|app| {
             init_app_paths(app.handle().clone());
             app.manage(Arc::new(Mutex::new(ConversationController::new())));
+            app.manage(Arc::new(Mutex::new(SettingsController::new())));
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -163,6 +186,8 @@ pub fn run() {
             get_conversation,
             delete_conversation,
             check_model_exists,
+            get_config,
+            set_config,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

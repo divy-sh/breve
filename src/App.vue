@@ -8,6 +8,7 @@ import ChatContainer from "./components/ChatContainer.vue";
 import { useConversations } from "./composables/useConversations";
 import DownloadingModel from "./components/DownloadingModel.vue";
 import DownloadPage from "./components/DownloadPage.vue";
+import { useSettings } from './composables/useSettings';
 
 const {
   conversations, 
@@ -18,6 +19,11 @@ const {
   continueConversation,
   deleteConversation
 } = useConversations();
+
+const {
+  getConfig,
+  setConfig
+} = useSettings();
 
 const theme = ref<'material' | 'ios'>('material');
 const isDark = ref(false);
@@ -30,11 +36,13 @@ function setDark(value: boolean) {
     html.classList.remove('dark');
   }
   isDark.value = value;
+  setConfig('darkMode', value.toString()).catch(console.error);
 }
 
 onMounted(() => {
-  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-  setDark(prefersDark);
+  getConfig('darkMode').then((value) => {
+    setDark(value === 'true');
+  });
 });
 
 provide('AppTheme', {
