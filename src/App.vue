@@ -69,6 +69,8 @@ onMounted(async () => {
   });
 
   loadConversations().catch(console.error);
+
+  loadConversation(await getConfig('lastConversationId')).catch(console.error);
 });
 
 onUnmounted(() => {
@@ -121,6 +123,7 @@ provide('handleSendMessage', handleSendMessage);
       @load-conversation="loadConversation"
       @create-new="createNewChat"
       @delete-conversation="deleteConversation"
+      @set-config="setConfig"
     />
 
     <ChatContainer v-if="downloadStatus === 'downloaded'"

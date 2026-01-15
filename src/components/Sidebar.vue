@@ -25,6 +25,7 @@
     (e: 'load-conversation', id: string): void;
     (e: 'create-new'): void;
     (e: 'delete-conversation', id: string): void;
+    (e: 'set-config', key: string, value: any): void;
   }>();
 
   const openDropdownFor = ref<string | null>(null);
@@ -79,7 +80,7 @@
           :key="convo.id"
           :title="convo.title || 'Untitled Chat'"
           :active="isOpen && currentConversationId === convo.id"
-          @click="emit('load-conversation', convo.id); emit('toggle')"
+          @click="emit('load-conversation', convo.id); emit('toggle'); emit('set-config', 'lastConversationId', convo.id)"
         >
           <template #after>
             <k-button clear @click.stop="handleMenuClick(convo.id), openPopover($event.currentTarget)">
