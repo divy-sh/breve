@@ -172,6 +172,7 @@ pub fn run() {
     use std::sync::Arc;
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_iap::init())
         .setup(|app| {
             init_app_paths(app.handle().clone());
             app.manage(Arc::new(Mutex::new(ConversationController::new())));

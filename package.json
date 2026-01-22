@@ -10,6 +10,7 @@
     "tauri": "tauri"
   },
   "dependencies": {
+    "@choochmeque/tauri-plugin-iap-api": "^0.7.1",
     "@tailwindcss/vite": "^4.1.18",
     "@tauri-apps/api": "2.9",
     "@tauri-apps/plugin-opener": "2.5",
