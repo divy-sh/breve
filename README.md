@@ -79,11 +79,58 @@ npm run tauri build
 - Run npm run tauri android init
 
 To package for android:
+
+Add the following to src-tauri/gen/android/app/build.gradle.kts: 
+```kts
+defaultConfig {
+   ...
+}
+
+signingConfigs {
+   create("release") {
+      val keystorePropertiesFile = rootProject.file("keystore.properties")
+      val keystoreProperties = Properties()
+      if (keystorePropertiesFile.exists()) {
+            keystoreProperties.load(FileInputStream(keystorePropertiesFile))
+      }
+
+      keyAlias = keystoreProperties["keyAlias"] as String
+      keyPassword = keystoreProperties["password"] as String
+      storeFile = file(keystoreProperties["storeFile"] as String)
+      storePassword = keystoreProperties["password"] as String
+   }
+}
+buildTypes {
+   ...
+}
+```
+
+Add the following to src-tauri/gen/android/app/src/main/AndroidManifest.xml
+```xml
+<activity
+   # this line
+   android:windowSoftInputMode="adjustResize"
+   ...>
+      <intent-filter>
+      ...
+      </intent-filter>
+</activity>
+```
+
+Add File keystorre.properties to src-tauri/gen/android/
+
+```properties
+password=you key alias password
+keyAlias=your key alias
+storeFile=your google play keystore file path
+```
+
+apk file
 ```sh
 npm run tauri android build -- --apk
 ```
 
-To package for android as an aab file:
+aab file
 ```sh
 npm run tauri android build -- --aab
 ```
