@@ -95,13 +95,13 @@
     </k-page>
   </k-panel>
   <k-popover
-      :opened="popoverOpened"
-      :target="popoverTargetRef"
-      @backdropclick="() => (popoverOpened = false)"
-      class="w-32 p-2" >
-        <k-button clear
-          @click="() => { popoverOpened = false; deleteConversation(openDropdownFor!); }" >
-          Delete
-        </k-button>
-    </k-popover>
+    :opened="popoverOpened"
+    :target="popoverTargetRef"
+    @backdropclick="() => (popoverOpened = false)"
+    class="w-32 p-2" >
+      <k-button clear
+        @click="() => { popoverOpened = false; deleteConversation(openDropdownFor!); }" >
+        Delete
+      </k-button>
+  </k-popover>
 </template>
