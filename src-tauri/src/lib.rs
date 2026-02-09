@@ -1,30 +1,84 @@
-use std::{path::Path, sync::{Arc, Mutex}};
+use std::{
+    collections::{BTreeMap, HashMap},
+    sync::{Arc, Mutex},
+};
 
-use config::path_resolver::init_app_paths;
 use config::config_handler::Config;
+use config::path_resolver::init_app_paths;
 use controllers::conversation_controller::ConversationController;
-use tauri::{Manager, State, Window, Emitter};
+use tauri::{Manager, State, Window};
 
-use crate::{controllers::settings_controller::SettingsController, models::inference::Inference};
+use crate::{
+    controllers::settings_controller::SettingsController,
+    models::{
+        inference::Inference,
+        model_fetcher::{SET, UNSET},
+    },
+};
 
 pub mod config;
 pub mod controllers;
 pub mod dao;
 pub mod models;
 
+#[cfg_attr(mobile, tauri::mobile_entry_point)]
+pub fn run() {
+    tauri::Builder::default()
+        .plugin(tauri_plugin_opener::init())
+        .setup(|app| {
+            init_app_paths(app.handle().clone());
+
+            app.manage(Arc::new(Mutex::new(ConversationController::new())));
+            app.manage(Arc::new(Mutex::new(SettingsController::new())));
+
+            let settings_state = app.state::<Arc<Mutex<SettingsController>>>();
+            let convo_state = app.state::<Arc<Mutex<ConversationController>>>();
+
+            let saved_model = {
+                let settings_lock = settings_state.lock().ok();
+                settings_lock.and_then(|s| s.get_config("model_name".to_string()).ok())
+            };
+
+            if let Some(model_name) = saved_model {
+                let _ = activate_model(
+                    model_name,
+                    Arc::clone(settings_state.inner()),
+                    Arc::clone(convo_state.inner()),
+                );
+            }
+
+            Ok(())
+        })
+        .invoke_handler(tauri::generate_handler![
+            start_conversation,
+            continue_conversation,
+            get_conversation_ids,
+            get_conversation,
+            delete_conversation,
+            get_model_status,
+            get_config,
+            set_config,
+            get_available_models,
+            list_downloaded_models,
+            download_model,
+            delete_model,
+            set_default_model,
+            get_default_model,
+        ])
+        .run(tauri::generate_context!())
+        .expect("error while running tauri application");
+}
+
 #[tauri::command]
 async fn start_conversation(
     title: String,
     state: State<'_, Arc<Mutex<ConversationController>>>,
 ) -> Result<String, String> {
-    // clone the Arc to get ownership for locking
-    let state_arc = Arc::clone(&state.inner());
-    match state_arc.lock() {
-        Ok(mut controller) => controller
-            .start_new_conversation(&title)
-            .map_err(|e| e.to_string()),
-        Err(_) => Err("Internal error: controller lock poisoned".to_string()),
-    }
+    let state_arc = Arc::clone(state.inner());
+    let mut controller = state_arc.lock().map_err(|_| "Lock poisoned")?;
+    controller
+        .start_new_conversation(&title)
+        .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -34,87 +88,19 @@ async fn continue_conversation(
     window: Window,
     state: State<'_, Arc<Mutex<ConversationController>>>,
 ) -> Result<Option<String>, String> {
-    let state_arc = Arc::clone(&state.inner());
-    match state_arc.lock() {
-        Ok(mut controller) => controller
-            .continue_conversation(&conv_id, &user_input, window)
-            .map_err(|e| e.to_string()),
-        Err(_) => Err("Internal error: controller lock poisoned".to_string()),
-    }
+    let state_arc = Arc::clone(state.inner());
+    let mut controller = state_arc.lock().map_err(|_| "Lock poisoned")?;
+    controller
+        .continue_conversation(&conv_id, &user_input, window)
+        .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
 fn get_conversation_ids(state: State<'_, Arc<Mutex<ConversationController>>>) -> Vec<String> {
-    let state_arc = Arc::clone(&state.inner());
-    match state_arc.lock() {
-        Ok(controller) => controller.get_conversation_ids(),
-        Err(_) => vec![],
-    }
-}
-
-#[tauri::command]
-fn check_model_exists(window: Window, state: State<'_, Arc<Mutex<ConversationController>>>) {
-    let state_arc = Arc::clone(&state.inner());
-    let window_for_thread = window.clone();
-    let config = match state_arc.lock() {
-        Ok(controller) => {
-            controller.config.clone()
-        }
-        Err(_) => {
-            let _ = window_for_thread.emit("downloading-model", false);
-            eprintln!("Failed to acquire controller lock in check model exists");
-            return;
-        }
-    };
-    let path = &config.get_model_path();
-    let dest_path = Path::new(&path);
-    if dest_path.exists() {
-        let _ = window.emit("download-status", "downloaded");
-        initialize_inference(config, state_arc, window_for_thread);
-    } else {
-        let _ = window.emit("download-status", "awaitingUser");
-    }
-}
-
-/// Ensure model is available. This spawns a background thread to download the model
-/// if it's missing and emits `downloading-model` events to the window. Returns immediately.
-#[tauri::command]
-fn ensure_model(window: Window, state: tauri::State<Arc<Mutex<ConversationController>>>) -> Result<(), String> {
-    let state_arc = Arc::clone(&state.inner());
-    let window_for_thread = window.clone();
-    std::thread::spawn(move || {
-        // Acquire the lock only briefly to read config and check existing inference.
-        let config = match state_arc.lock() {
-            Ok(controller) => {
-                // If inference is already initialized, nothing to do.
-                if controller.inference.is_some() {
-                    return;
-                }
-                controller.config.clone()
-            }
-            Err(_) => {
-                let _ = window_for_thread.emit("downloading-model", false);
-                eprintln!("Failed to acquire controller lock in ensure_model");
-                return;
-            }
-        };
-
-        // fetch_model will emit events to the provided window as it runs. Do this without holding the controller lock.
-        if let Err(e) = models::model_fetcher::ModelFetcher::fetch_model(
-            &config.model_url,
-            &config.model_name,
-            &config.get_model_path(),
-            window_for_thread.clone(),
-        ) {
-            eprintln!("Model fetch failed: {:?}", e);
-            // In case of error, make sure to notify frontend to stop loading state
-            let _ = window_for_thread.emit("downloading-model", false);
-            return;
-        }
-
-        initialize_inference(config, state_arc, window_for_thread);
-    });
-    Ok(())
+    state
+        .lock()
+        .map(|c| c.get_conversation_ids())
+        .unwrap_or_default()
 }
 
 #[tauri::command]
@@ -122,13 +108,10 @@ fn get_conversation(
     conv_id: String,
     state: State<'_, Arc<Mutex<ConversationController>>>,
 ) -> Result<Option<models::conversation::Conversation>, String> {
-    let state_arc = Arc::clone(&state.inner());
-    match state_arc.lock() {
-        Ok(controller) => controller
-            .get_conversation(&conv_id)
-            .map_err(|e| e.to_string()),
-        Err(_) => Err("Internal error: controller lock poisoned".to_string()),
-    }
+    let controller = state.lock().map_err(|_| "Lock poisoned")?;
+    controller
+        .get_conversation(&conv_id)
+        .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -136,82 +119,225 @@ fn delete_conversation(
     conv_id: String,
     state: State<'_, Arc<Mutex<ConversationController>>>,
 ) -> Result<String, String> {
-    let state_arc = Arc::clone(&state.inner());
-    match state_arc.lock() {
-        Ok(controller) => controller
-            .delete_conversation(&conv_id)
-            .map_err(|e| e.to_string()),
-        Err(_) => Err("Internal error: controller lock poisoned".to_string()),
+    let controller = state.lock().map_err(|_| "Lock poisoned")?;
+    controller
+        .delete_conversation(&conv_id)
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn get_config(
+    key: String,
+    state: State<'_, Arc<Mutex<SettingsController>>>,
+) -> Result<String, String> {
+    let controller = state.lock().map_err(|_| "Lock poisoned")?;
+    controller.get_config(key).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn set_config(
+    key: String,
+    value: String,
+    state: State<'_, Arc<Mutex<SettingsController>>>,
+) -> Result<(), String> {
+    let controller = state.lock().map_err(|_| "Lock poisoned")?;
+    controller.set_config(key, value).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn get_available_models() -> BTreeMap<String, HashMap<String, String>> {
+    Config::init()
+        .map(|c| c.get_available_models())
+        .unwrap_or_default()
+}
+
+#[tauri::command]
+fn get_default_model(state: State<'_, Arc<Mutex<ConversationController>>>) -> String {
+    state
+        .lock()
+        .map(|c| c.config.get_model_name())
+        .unwrap_or_default()
+}
+
+#[tauri::command]
+fn get_model_status(state: State<'_, Arc<Mutex<ConversationController>>>) -> String {
+    let controller = match state.lock() {
+        Ok(c) => c,
+        Err(_) => return UNSET.into(),
+    };
+
+    let name = controller.config.get_model_name();
+    if name.is_empty() {
+        return UNSET.into();
+    }
+
+    let path = crate::config::path_resolver::paths()
+        .app_local_data(&name)
+        .unwrap();
+    if path.exists() {
+        SET.into()
+    } else {
+        UNSET.into()
     }
 }
 
 #[tauri::command]
-fn get_config(key: String, state: State<'_, Arc<Mutex<SettingsController>>>,) -> Result<String, String> {
-    let state_arc = Arc::clone(&state.inner());
-    match state_arc.lock() {
-        Ok(controller) => controller
-            .get_config(key)
-            .map_err(|e| e.to_string()),
-        Err(_) => Err("Internal error: controller lock poisoned".to_string()),
-    }
-}
+fn list_downloaded_models() -> Vec<String> {
+    let mut found = vec![];
 
-#[tauri::command]
-fn set_config(key: String, value: String, state: State<'_, Arc<Mutex<SettingsController>>>,) -> Result<(), String> {
-    let state_arc = Arc::clone(&state.inner());
-    match state_arc.lock() {
-        Ok(controller) => controller
-            .set_config(key, value)
-            .map_err(|e| e.to_string()),
-        Err(_) => Err("Internal error: controller lock poisoned".to_string()),
-    }
-}
-
-#[cfg_attr(mobile, tauri::mobile_entry_point)]
-pub fn run() {
-    use std::sync::Arc;
-    tauri::Builder::default()
-        .plugin(tauri_plugin_opener::init())
-        // .plugin(tauri_plugin_iap::init())
-        .setup(|app| {
-            init_app_paths(app.handle().clone());
-            app.manage(Arc::new(Mutex::new(ConversationController::new())));
-            app.manage(Arc::new(Mutex::new(SettingsController::new())));
-            Ok(())
-        })
-        .invoke_handler(tauri::generate_handler![
-            start_conversation,
-            continue_conversation,
-            get_conversation_ids,
-            ensure_model,
-            get_conversation,
-            delete_conversation,
-            check_model_exists,
-            get_config,
-            set_config,
-        ])
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
-}
-
-fn initialize_inference(config: Config, state_arc: Arc<Mutex<ConversationController>>, window_for_thread: Window) {
-    // Initialize inference (may be expensive) without holding the controller lock.
-    match Inference::init(&config) {
-        Ok(inference) => {
-            // Reacquire the lock only to set the inference instance.
-            match state_arc.lock() {
-                Ok(mut controller) => {
-                    controller.set_inference(inference);
-                }
-                Err(_) => {
-                    eprintln!("Failed to acquire controller lock to set inference");
-                    let _ = window_for_thread.emit("downloading-model", false);
-                }
+    if let Ok(cfg) = Config::init() {
+        for (name, _) in cfg.get_available_models() {
+            let p = crate::config::path_resolver::paths()
+                .app_local_data(&name)
+                .unwrap();
+            if p.exists() {
+                found.push(name);
             }
         }
-        Err(e) => {
-            eprintln!("Inference init failed: {}", e);
-            let _ = window_for_thread.emit("downloading-model", false);
+    }
+    found
+}
+
+#[tauri::command]
+async fn download_model(model_name: String, window: Window) -> Result<(), String> {
+    let cfg = Config::init().map_err(|e| e.to_string())?;
+    let url = cfg
+        .get_available_models()
+        .get(&model_name)
+        .ok_or("Model not found")?
+        .get("repo")
+        .ok_or("Repo URL not found")?
+        .clone();
+    let path = crate::config::path_resolver::paths()
+        .app_local_data(&model_name)
+        .unwrap()
+        .to_string_lossy()
+        .to_string();
+
+    let (tx, rx) = std::sync::mpsc::channel();
+
+    std::thread::spawn(move || {
+        let result =
+            models::model_fetcher::ModelFetcher::fetch_model(&url, &model_name, &path, window);
+        let _ = tx.send(result);
+    });
+
+    rx.recv()
+        .map_err(|e| format!("Download failed: {}", e))?
+        .map_err(|e| format!("Model fetch failed: {:?}", e))?;
+
+    Ok(())
+}
+
+#[tauri::command]
+fn delete_model(
+    model_name: String,
+    state: State<'_, Arc<Mutex<ConversationController>>>,
+    settings: State<'_, Arc<Mutex<SettingsController>>>,
+) -> Result<(), String> {
+    let path = crate::config::path_resolver::paths()
+        .app_local_data(&model_name)
+        .unwrap();
+
+    if path.exists() {
+        std::fs::remove_file(&path)
+            .or_else(|_| std::fs::remove_dir_all(&path))
+            .map_err(|e| format!("Delete failed: {}", e))?;
+    }
+
+    let mut controller = state.lock().map_err(|_| "Lock poisoned")?;
+    if controller.config.get_model_name() == model_name {
+        controller.config.model_name.clear();
+        controller.inference = None;
+
+        if let Ok(settings) = settings.lock() {
+            let _ = settings.set_config("model_name".into(), "".into());
         }
+    }
+
+    Ok(())
+}
+
+#[tauri::command]
+fn set_default_model(
+    model_name: String,
+    settings: State<'_, Arc<Mutex<SettingsController>>>,
+    state: State<'_, Arc<Mutex<ConversationController>>>,
+) -> Result<(), String> {
+    activate_model(
+        model_name,
+        Arc::clone(settings.inner()),
+        Arc::clone(state.inner()),
+    )
+}
+
+fn validate_model(config: &Config, model_name: &str) -> Result<(), String> {
+    if !config.get_available_models().contains_key(model_name) {
+        return Err("Model not available".into());
+    }
+
+    let path = crate::config::path_resolver::paths()
+        .app_local_data(model_name)
+        .unwrap();
+
+    if !path.exists() {
+        return Err("Model not downloaded".into());
+    }
+
+    Ok(())
+}
+
+fn activate_model(
+    model_name: String,
+    settings: Arc<Mutex<SettingsController>>,
+    state: Arc<Mutex<ConversationController>>,
+) -> Result<(), String> {
+    let cfg = {
+        let controller = state.lock().map_err(|_| "Controller lock poisoned")?;
+        controller.config.clone()
+    };
+
+    validate_model(&cfg, &model_name)?;
+    // persist
+    settings
+        .lock()
+        .map_err(|_| "Settings lock poisoned")?
+        .set_config("model_name".into(), model_name.clone())
+        .map_err(|e| e.to_string())?;
+
+    // update controller
+    {
+        let mut controller = state.lock().map_err(|_| "Controller lock poisoned")?;
+
+        if controller.config.get_model_name() == model_name && controller.inference.is_some() {
+            return Ok(());
+        }
+
+        controller.set_model_name(model_name.clone());
+        controller.inference = None;
+    }
+
+    // init inference async
+    let state_clone = Arc::clone(&state);
+    std::thread::spawn(move || {
+        let cfg = match state_clone.lock() {
+            Ok(c) => c.config.clone(),
+            Err(_) => return,
+        };
+
+        initialize_inference(cfg, Arc::clone(&state_clone));
+    });
+
+    Ok(())
+}
+
+fn initialize_inference(config: Config, state_arc: Arc<Mutex<ConversationController>>) {
+    match Inference::init(&config) {
+        Ok(inference) => {
+            if let Ok(mut controller) = state_arc.lock() {
+                controller.set_inference(inference);
+            }
+        }
+        Err(e) => eprintln!("Inference init failed: {}", e),
     }
 }

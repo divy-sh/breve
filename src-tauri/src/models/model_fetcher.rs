@@ -1,25 +1,34 @@
 use anyhow::{Context, Result};
-use tauri::{Emitter, Window};
-use std::path::Path;
-use std::fs;
 use reqwest::blocking::Client;
-use std::io::{Write, Read};
+use std::fs;
+use std::io::{Read, Write};
+use std::path::Path;
+use tauri::{Emitter, Window};
 use tempfile::NamedTempFile;
 
 pub struct ModelFetcher;
 
+pub const SET: &str = "SET";
+pub const UNSET: &str = "UNSET";
+
 impl ModelFetcher {
-    /// Fetches a model file from the Hugging Face hub into `model_path`.
-    /// If `model_path` already exists, the download is skipped.
-    pub fn fetch_model(model_url: &str, model_name: &str, model_path: &str, window: Window) -> Result<()> {
+    pub fn fetch_model(
+        model_url: &str,
+        model_name: &str,
+        model_path: &str,
+        window: Window,
+    ) -> Result<()> {
         let dest_path = Path::new(&model_path);
         if dest_path.exists() {
             return Ok(());
         }
-        let _ = window.emit("download-status", "downloading");
+
         // Build the raw file URL. This assumes the file is available under `main` branch and
         // the repository follows standard Hugging Face layout.
-        let raw_url = format!("https://huggingface.co/{}/resolve/main/{}", model_url, model_name);
+        let raw_url = format!(
+            "https://huggingface.co/{}/resolve/main/{}",
+            model_url, model_name
+        );
 
         let client = Client::builder()
             .user_agent("breve-model-fetcher/0.1")
@@ -33,7 +42,10 @@ impl ModelFetcher {
 
         if !resp.status().is_success() {
             // Fallback: try hf_hub's get (no progress) to keep previous behavior
-            eprintln!("Raw download failed (status: {}), falling back to hf_hub get", resp.status());
+            eprintln!(
+                "Raw download failed (status: {}), falling back to hf_hub get",
+                resp.status()
+            );
             return Ok(());
         }
 
@@ -50,9 +62,15 @@ impl ModelFetcher {
         let mut buffer = [0u8; 8 * 1024];
 
         loop {
-            let n = resp.read(&mut buffer).context("failed to read from response stream")?;
-            if n == 0 { break; }
-            tmpfile.write_all(&buffer[..n]).context("failed to write to temp file")?;
+            let n = resp
+                .read(&mut buffer)
+                .context("failed to read from response stream")?;
+            if n == 0 {
+                break;
+            }
+            tmpfile
+                .write_all(&buffer[..n])
+                .context("failed to write to temp file")?;
             downloaded += n as u64;
 
             // Emit progress if total_size known, else emit bytes downloaded as fallback (as percentage 0..100 scaled)
@@ -73,12 +91,12 @@ impl ModelFetcher {
         }
 
         // Persist temp file to destination path
-        tmpfile.persist(&dest_path).context("failed to move downloaded model to model_path")?;
+        tmpfile
+            .persist(&dest_path)
+            .context("failed to move downloaded model to model_path")?;
 
-        println!("Model downloaded to: {}", model_path);
         // Final progress emit (100%) and end boolean
         let _ = window.emit("download-progress", 100.0);
-        let _ = window.emit("download-status", "downloaded");
         Ok(())
     }
 }

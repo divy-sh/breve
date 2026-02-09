@@ -1,30 +1,34 @@
 <script setup lang="ts">
     import {
-        kPage,
-        kNavbar,
         kPopup,
-        kLink,
+        Navbar,
+        Page,
+        Link,
     } from 'konsta/vue';
+import ModelsDownload from './ModelsDownload.vue';
 
-    const props = defineProps<{
-        openSettings: boolean;
-    }>();
+    const { openSettings } = defineProps<{ openSettings: boolean }>();
 
     const emit = defineEmits<{
         (e: 'close'): void;
     }>();
+
 </script>
 
 <template>
     <k-popup :opened="openSettings" @backdropclick="emit('close')">
-      <k-page>
-        <k-navbar title="Settings">
+      <Page>
+        <Navbar title="Settings">
           <template #right>
-            <k-link icon-only @click="emit('close')">
+            <Link icon-only @click="emit('close')">
               <i class="pi pi-times p-2"></i>
-            </k-link>
+            </Link>
           </template>
-        </k-navbar>
-      </k-page>
+        </Navbar>
+
+        <ModelsDownload/>
+      </Page>
+
     </k-popup>
 </template>
+

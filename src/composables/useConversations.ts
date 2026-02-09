@@ -2,18 +2,20 @@ import { ref } from 'vue';
 import { invoke } from "@tauri-apps/api/core";
 import type { Conversation, ConversationSummary } from '../types';
 
+const conversations = ref<ConversationSummary[]>([]);
+const currentConversation = ref<Conversation | null>(null);
+const modelStatus = ref<string>("UNSET");
+const availableModels = ref<Record<string,string>>({});
+const downloadedModels = ref<string[]>([]);
+const defaultModel = ref<string>("");
+
 export function useConversations() {
-  const conversations = ref<ConversationSummary[]>([]);
-  const currentConversation = ref<Conversation | null>(null);
-  const isDownloadingModel = ref<boolean>(false);
 
   /**
    * Load all conversations from the backend
    */
   async function loadConversations() {
     try {
-      invoke("check_model_exists", {}).catch((e) => console.warn("check_model_exists invoke failed:", e));
-
       // Listen for backend download events once (safe to call multiple times; listener will be a no-op if already set)
       // We don't await the listen promise here; update the reactive ref when events arrive.
       const ids = await invoke("get_conversation_ids") as string[];
@@ -109,24 +111,100 @@ export function useConversations() {
     }
   }
 
-  async function downloadModel() {
+  async function downloadModel(modelName?: string) {
     try {
-      await invoke("ensure_model") as string;
+      await invoke("download_model", { modelName: modelName });
     } catch (error) {
       console.error("Error downloading model: ", error);
       throw error;
     }
   }
 
+  async function getAvailableModels() {
+    try {
+      const res = await invoke("get_available_models") as Record<string, string>;
+      return res;
+    } catch (err) {
+      console.error("Error fetching available models", err);
+      return {};
+    }
+  }
+
+  async function listDownloadedModels() {
+    try {
+      const res = await invoke("list_downloaded_models") as string[];
+      return res.sort();
+    } catch (err) {
+      console.error("Error fetching downloaded models", err);
+      return [] as string[];
+    }
+  }
+
+  async function deleteModel(modelName: string) {
+    try {
+      await invoke("delete_model", { modelName });
+    } catch (err) {
+      console.error("Error deleting model", err);
+      throw err;
+    }
+  }
+
+  async function setDefaultModel(modelName: string) {
+    try {
+      await invoke("set_default_model", { modelName });
+    } catch (err) {
+      console.error("Error setting default model", err);
+      throw err;
+    }
+  }
+
+  async function getDefaultModel() {
+    try {
+      const res = await invoke("get_default_model") as string;
+      return res;
+    } catch (err) {
+      console.error("Error fetching default model", err);
+      return "";
+    }
+  }
+
+    async function getModelStatus() {
+    try {
+      const res = await invoke("get_model_status") as string;
+      return res;
+    } catch (err) {
+      console.error("Error fetching model status", err);
+      return "";
+    }
+  }
+
+  async function abortGeneration() {
+    try {
+      await invoke("abort_generation");
+    } catch (err) {
+      console.error("Error aborting generation", err);
+    }
+  }
+
   return {
     conversations,
     currentConversation,
-    isDownloadingModel,
+    modelStatus,
+    availableModels,
+    downloadedModels,
+    defaultModel,
     loadConversations,
     loadConversation,
     startNewConversation,
     continueConversation,
     deleteConversation,
-    downloadModel
+    downloadModel,
+    getAvailableModels,
+    listDownloadedModels,
+    deleteModel,
+    setDefaultModel,
+    getDefaultModel,
+    getModelStatus,
+    abortGeneration
   };
 }

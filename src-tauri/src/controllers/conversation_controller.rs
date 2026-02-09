@@ -31,6 +31,10 @@ impl ConversationController {
         self.inference = Some(inference);
     }
 
+    pub fn set_model_name(&mut self, model_name: String) {
+        self.config.model_name = model_name;
+    }
+
     pub fn get_conversation_ids(&self) -> Vec<String> {
         if let Ok(conversation_ids) = self.dao.get_conversation_ids() {
             return conversation_ids;

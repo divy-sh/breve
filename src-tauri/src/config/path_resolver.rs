@@ -24,7 +24,8 @@ impl AppPaths {
     }
 
     pub fn app_local_data<P: AsRef<Path>>(&self, path: P) -> Result<PathBuf, String> {
-        let path = self.app_handle
+        let path = self
+            .app_handle
             .path()
             .resolve(path, BaseDirectory::AppLocalData)
             .map_err(|e| format!("Failed to resolve app local data path: {}", e))?;

@@ -11,7 +11,7 @@
   import MessageInput from './MessageInput.vue';
   import type { Conversation } from '../types';
   import { ref } from 'vue';
-  import Settings from './settings.vue';
+  import Settings from './Settings.vue';
 
   // Props
   defineProps<{

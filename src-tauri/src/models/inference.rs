@@ -1,5 +1,5 @@
-use llama_cpp_2::context::params::LlamaContextParams;
 use llama_cpp_2::context::LlamaContext;
+use llama_cpp_2::context::params::LlamaContextParams;
 use llama_cpp_2::llama_backend::LlamaBackend;
 use llama_cpp_2::llama_batch::LlamaBatch;
 use llama_cpp_2::model::LlamaModel;
@@ -7,6 +7,7 @@ use llama_cpp_2::model::params::LlamaModelParams;
 use llama_cpp_2::model::{AddBos, Special};
 use llama_cpp_2::sampling::LlamaSampler;
 use llama_cpp_2::token::LlamaToken;
+use std::collections::HashMap;
 use std::io::Write;
 use std::num::NonZero;
 use std::sync::OnceLock;
@@ -15,29 +16,27 @@ use tauri::{Emitter, Window};
 use super::conversation::Conversation;
 use crate::config::config_handler::Config;
 
-// 1. Global Singleton Container to hold Model and Backend
+// Global Singleton to hold Model and Backend
 struct GlobalLlama {
     backend: LlamaBackend,
     model: LlamaModel,
 }
 
-// The static instance (initialized once)
 static LLAMA_GLOBAL: OnceLock<GlobalLlama> = OnceLock::new();
 
 pub struct Inference {
-    // The context borrows from the static GlobalLlama, so it has a 'static lifetime
     pub ctx: LlamaContext<'static>,
     pub batch_size: i32,
     pub max_context_length: i32,
     pub max_output_length: i32,
+    pub model_attrs: HashMap<String, String>,
 }
 
 impl Inference {
     pub fn init(config: &Config) -> Result<Inference, String> {
-        // 2. Initialize the Global Model/Backend only if it doesn't exist yet
         let global_resources = LLAMA_GLOBAL.get_or_init(|| {
             let backend = LlamaBackend::init().expect("Backend init failed");
-            
+
             let model = LlamaModel::load_from_file(
                 &backend,
                 config.get_model_path(),
@@ -48,46 +47,41 @@ impl Inference {
             GlobalLlama { backend, model }
         });
 
-        // 3. Create the Context (Session) once, referencing the global model
         let ctx_params = LlamaContextParams::default()
             .with_n_batch(config.batch_size.try_into().unwrap())
             .with_n_ctx(Some(
-                NonZero::try_from(config.max_context_length as u32).unwrap(),
+                NonZero::try_from((config.max_context_length + config.max_context_size) as u32)
+                    .unwrap(),
             ));
 
-        let ctx = global_resources.model
+        let ctx = global_resources
+            .model
             .new_context(&global_resources.backend, ctx_params)
             .map_err(|e| format!("Session creation error: {:?}", e))?;
-
-        println!(
-            "Inference initialized. Max Context: {}, Max Output: {}",
-            config.max_context_length, config.max_context_size
-        );
 
         Ok(Inference {
             ctx,
             batch_size: config.batch_size,
             max_context_length: config.max_context_length,
             max_output_length: config.max_context_size,
+            model_attrs: config.get_available_models().get(&config.model_name).cloned().unwrap_or_default(),
         })
     }
 
-    pub fn generate_text(&mut self, conv: &Conversation, window: Window) -> Result<String, String> {
-        // Access the model from the global singleton
+    pub fn generate_text(
+        &mut self,
+        conv: &Conversation,
+        window: Window,
+    ) -> Result<String, String> {
         let global = LLAMA_GLOBAL.get().ok_or("Global model not initialized")?;
         let model = &global.model;
 
-        // CRITICAL: Clear the KV cache because format_prompt sends the WHOLE history again.
-        // If you don't do this, the model sees the previous messages duplicated.
+        // Clear cache as we re-send full history formatted for the specific model
         self.ctx.clear_kv_cache();
 
         let mut batch = LlamaBatch::new(self.batch_size as usize, 8);
-        
-        // Pass the global model to the helper
-        let tokens_list = match self.format_prompt(conv, model) {
-            Ok(t) => t,
-            Err(e) => return Err(e),
-        };
+
+        let tokens_list = self.format_prompt(conv, model)?;
         let last_index = tokens_list.len() as i32 - 1;
 
         for (i, token) in (0_i32..).zip(tokens_list.into_iter()) {
@@ -102,23 +96,27 @@ impl Inference {
         let mut decoder = encoding_rs::UTF_8.new_decoder();
         let mut sampler = LlamaSampler::greedy();
         let mut message = String::new();
-        
-        while n_cur <= self.batch_size && (n_cur - batch.n_tokens()) <= self.max_output_length {
+
+        while n_cur <= (self.max_context_length + self.max_output_length)
+            && (n_cur - batch.n_tokens()) <= self.max_output_length
+        {
             let token = sampler.sample(&self.ctx, batch.n_tokens() - 1);
             sampler.accept(token);
-            
+
             if token == model.token_eos() {
                 break;
             }
-            
+
             let output_bytes = model.token_to_bytes(token, Special::Tokenize).unwrap();
             let mut output_string = String::with_capacity(32);
             let _ = decoder.decode_to_string(&output_bytes, &mut output_string, false);
+
             message += &output_string;
-            
+
             if let Err(e) = window.emit("llm-stream", output_string.clone()) {
                 eprintln!("Emit error: {:?}", e);
             }
+
             let _ = std::io::stdout().flush();
             batch.clear();
 
@@ -126,6 +124,7 @@ impl Inference {
                 eprintln!("Batch add error: {:?}", e);
                 break;
             }
+
             n_cur += 1;
 
             if let Err(e) = self.ctx.decode(&mut batch) {
@@ -150,6 +149,7 @@ impl Inference {
         let mut message_segments = Vec::new();
         let mut total_len = formatted_prompt.len() + end_str.len();
 
+        // 4. Iterate backwards to respect context window
         for msg in conv.body.iter().rev() {
             let segment = format!(
                 "<|start_header_id|>{}<|end_header_id|>\n{}\n<|eot_id|>",
@@ -164,6 +164,7 @@ impl Inference {
             }
         }
 
+        // 5. Assemble and Tokenize
         message_segments.reverse();
         for segment in message_segments {
             formatted_prompt.push_str(&segment);

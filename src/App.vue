@@ -6,18 +6,19 @@ import { listen } from "@tauri-apps/api/event";
 import Sidebar from "./components/Sidebar.vue";
 import ChatContainer from "./components/ChatContainer.vue";
 import { useConversations } from "./composables/useConversations";
-import DownloadingModel from "./components/DownloadingModel.vue";
-import DownloadPage from "./components/DownloadPage.vue";
 import { useSettings } from './composables/useSettings';
+import ModelsDownload from './components/ModelsDownload.vue';
 
 const {
   conversations, 
-  currentConversation, 
+  currentConversation,
+  modelStatus,
   loadConversations, 
   loadConversation, 
   startNewConversation,
   continueConversation,
-  deleteConversation
+  deleteConversation,
+  getModelStatus
 } = useConversations();
 
 const {
@@ -27,6 +28,31 @@ const {
 
 const theme = ref<'material' | 'ios'>('material');
 const isDark = ref(false);
+const currentStreamingContent = ref("");
+const isLoading = ref(false);
+const sidebarOpen = ref(false);
+
+let unlisten: (() => void) | null = null;
+
+onMounted(async () => {
+  modelStatus.value = await getModelStatus();
+  getConfig('darkMode').then((value) => {
+    setDark(value === 'true');
+  });
+
+  unlisten = await listen("llm-stream", (event) => {
+    currentStreamingContent.value += event.payload as string;
+  });
+
+  loadConversations().catch(console.error);
+
+  loadConversation(await getConfig('lastConversationId')).catch(console.error);
+
+});
+
+onUnmounted(() => {
+  unlisten?.();
+});
 
 function setDark(value: boolean) {
   const html = document.documentElement;
@@ -39,47 +65,12 @@ function setDark(value: boolean) {
   setConfig('darkMode', value.toString()).catch(console.error);
 }
 
-onMounted(() => {
-  getConfig('darkMode').then((value) => {
-    setDark(value === 'true');
-  });
-});
-
-provide('AppTheme', {
-  theme,
-  isDark,
-  setDark,
-});
-
-const currentStreamingContent = ref("");
-const isLoading = ref(false);
-const downloadStatus = ref("");
-const sidebarOpen = ref(false);
-
-let unlisten: (() => void) | null = null;
-let unlisten2: (() => void) | null = null;
-
-onMounted(async () => {
-  unlisten = await listen("llm-stream", (event) => {
-    currentStreamingContent.value += event.payload as string;
-  });
-
-  unlisten2 = await listen("download-status", (event) => {
-    downloadStatus.value = event.payload as string;
-  });
-
-  loadConversations().catch(console.error);
-
-  loadConversation(await getConfig('lastConversationId')).catch(console.error);
-});
-
-onUnmounted(() => {
-  unlisten?.();
-  unlisten2?.();
-});
-
 function createNewChat() {
   currentConversation.value = null;
+}
+
+function toggleSidebar() {
+  sidebarOpen.value = !sidebarOpen.value;
 }
 
 async function handleSendMessage(message: string) {
@@ -102,20 +93,21 @@ async function handleSendMessage(message: string) {
   }
 }
 
-function toggleSidebar() {
-  sidebarOpen.value = !sidebarOpen.value;
-}
-
 provide('isLoading', isLoading);
 provide('currentStreamingContent', currentStreamingContent);
 provide('handleSendMessage', handleSendMessage);
+provide('AppTheme', {
+  theme,
+  isDark,
+  setDark,
+});
 </script>
 
 <template>
   <k-app :theme="theme">
-    <DownloadPage v-if="downloadStatus === 'awaitingUser'" />
-    <DownloadingModel v-if="downloadStatus === 'downloading'" />
-    <Sidebar v-if="downloadStatus === 'downloaded'"
+    <ModelsDownload v-if="modelStatus === 'UNSET'" />
+
+    <Sidebar v-if="modelStatus === 'SET'"
       :conversations="conversations"
       :currentConversationId="currentConversation?.id"
       :isOpen="sidebarOpen"
@@ -126,7 +118,7 @@ provide('handleSendMessage', handleSendMessage);
       @set-config="setConfig"
     />
 
-    <ChatContainer v-if="downloadStatus === 'downloaded'"
+    <ChatContainer v-if="modelStatus === 'SET'"
       :conversation="currentConversation"
       :isLoading="isLoading"
       :streamingContent="currentStreamingContent"

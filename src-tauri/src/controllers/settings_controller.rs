@@ -14,13 +14,13 @@ impl SettingsController {
     }
 
     pub fn get_config(&self, key: String) -> Result<String, String> {
-        self.dao.get_config(key)
+        self.dao
+            .get_config(key)
             .map_err(|e| e.to_string())?
             .ok_or_else(|| "Config not found".to_string())
     }
 
     pub fn set_config(&self, key: String, value: String) -> Result<(), String> {
-        self.dao.set_config(key, value)
-            .map_err(|e| e.to_string())
+        self.dao.set_config(key, value).map_err(|e| e.to_string())
     }
 }
