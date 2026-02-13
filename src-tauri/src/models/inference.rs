@@ -173,7 +173,7 @@ impl Inference {
         formatted_prompt.push_str(&end_str);
         
         model
-            .str_to_token(&formatted_prompt, AddBos::Always)
+            .str_to_token(&formatted_prompt, AddBos::Never)
             .map_err(|e| format!("Tokenization failed: {:?}", e))
     }
 }
