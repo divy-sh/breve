@@ -25,6 +25,7 @@ pub mod models;
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_iap::init())
         .setup(|app| {
             init_app_paths(app.handle().clone());
 

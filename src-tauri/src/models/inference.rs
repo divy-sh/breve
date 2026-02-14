@@ -30,6 +30,7 @@ pub struct Inference {
     pub max_context_length: i32,
     pub max_output_length: i32,
     pub model_attrs: HashMap<String, String>,
+    pub system_prompt: String,
 }
 
 impl Inference {
@@ -64,15 +65,16 @@ impl Inference {
             batch_size: config.batch_size,
             max_context_length: config.max_context_length,
             max_output_length: config.max_context_size,
-            model_attrs: config.get_available_models().get(&config.model_name).cloned().unwrap_or_default(),
+            model_attrs: config
+                .get_available_models()
+                .get(&config.model_name)
+                .cloned()
+                .unwrap_or_default(),
+            system_prompt: config.system_prompt.clone(),
         })
     }
 
-    pub fn generate_text(
-        &mut self,
-        conv: &Conversation,
-        window: Window,
-    ) -> Result<String, String> {
+    pub fn generate_text(&mut self, conv: &Conversation, window: Window) -> Result<String, String> {
         let global = LLAMA_GLOBAL.get().ok_or("Global model not initialized")?;
         let model = &global.model;
 
@@ -136,15 +138,19 @@ impl Inference {
     }
 
     // Updated signature to accept &LlamaModel
-    pub fn format_prompt(&self, conv: &Conversation, model: &LlamaModel) -> Result<Vec<LlamaToken>, String> {
-        let system_prompt = "You are a friendly AI assistant named Breve.
-        You are designed to respond to user queries in a friendly and empathetic manner.
-        Answer without making up facts or hallucinating.";
-        
-        let mut formatted_prompt = format!(
-            "<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n{}\n<|eot_id|>",
-            system_prompt
-        );
+    pub fn format_prompt(
+        &self,
+        conv: &Conversation,
+        model: &LlamaModel,
+    ) -> Result<Vec<LlamaToken>, String> {
+        let prompt_start = self.model_attrs.get("prompt_start").cloned().unwrap();
+        let prompt_end = self.model_attrs.get("prompt_end").cloned().unwrap();
+        let sys = self.model_attrs.get("sys").cloned().unwrap();
+
+        let mut formatted_prompt = prompt_start
+            .replace("{role}", &sys)
+            .replace("{message}", &self.system_prompt)
+            + prompt_end.clone().as_str();
         let end_str = "<|start_header_id|>assistant<|end_header_id|>\n";
         let mut message_segments = Vec::new();
         let mut total_len = formatted_prompt.len() + end_str.len();
@@ -171,9 +177,9 @@ impl Inference {
         }
 
         formatted_prompt.push_str(&end_str);
-        
+
         model
-            .str_to_token(&formatted_prompt, AddBos::Never)
+            .str_to_token(&formatted_prompt, AddBos::Always)
             .map_err(|e| format!("Tokenization failed: {:?}", e))
     }
 }

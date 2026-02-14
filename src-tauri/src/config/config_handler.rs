@@ -1,7 +1,5 @@
 use std::collections::{BTreeMap, HashMap};
 
-use serde::{Deserialize, Serialize};
-
 use crate::config::path_resolver;
 
 #[derive(Clone)]
@@ -10,18 +8,9 @@ pub struct Config {
     pub batch_size: i32,
     pub max_context_length: i32,
     pub max_context_size: i32,
+    pub system_prompt: String,
     db_name: String,
     models: BTreeMap<String, HashMap<String, String>>,
-}
-
-#[derive(Clone, Serialize, Deserialize, Debug)]
-pub struct ModelTemplate {
-    pub bos: String,
-    pub eos: String,
-    pub system_prefix: String,
-    pub user_prefix: String,
-    pub assistant_prefix: String,
-    pub system_prompt: String,
 }
 
 impl Config {
@@ -45,64 +34,76 @@ impl Config {
         let max_context_size = 2048;
         let batch_size = max_tokens_clamped;
 
+        let system_prompt = "You are a friendly AI assistant named Breve.
+        You are designed to respond to user queries in a friendly and empathetic manner.
+        Answer without making up facts or hallucinating.";
+
         let models = BTreeMap::from([
             (
                 "Llama-3.2-1B-Instruct-Q4_K_S.gguf".to_string(),
                 HashMap::from([
                     ("repo".into(), "bartowski/Llama-3.2-1B-Instruct-GGUF".into()),
-
-                    ("bos".into(), "<|begin_of_text|>".into()),
-                    ("eos".into(), "<|eot_id|>".into()),
-                    ("usr".into(), "<|start_header_id|>user<|end_header_id|>\n".into()),
-                    ("ast".into(), "<|start_header_id|>assistant<|end_header_id|>\n".into()),
-                    ("sys".into(), "<|start_header_id|>sys<|end_header_id|>\n".into()),
+                    (
+                        "prompt_format".into(),
+                        "<|start_header_id|>{role}<|end_header_id|>\n{message}\n<|eot_id|>".into(),
+                    ),
+                    ("sys".into(), "system".into()),
+                    ("us".into(), "user".into()),
+                    ("ast".into(), "assistant".into()),
                 ]),
             ),
             (
                 "Llama-3.2-1B-Instruct-Q6_K_L.gguf".to_string(),
                 HashMap::from([
                     ("repo".into(), "bartowski/Llama-3.2-1B-Instruct-GGUF".into()),
-
-                    ("bos".into(), "<|begin_of_text|>".into()),
-                    ("eos".into(), "<|eot_id|>".into()),
-                    ("usr".into(), "<|start_header_id|>user<|end_header_id|>\n".into()),
-                    ("ast".into(), "<|start_header_id|>assistant<|end_header_id|>\n".into()),
-                    ("sys".into(), "<|start_header_id|>sys<|end_header_id|>\n".into()),
+                    (
+                        "prompt_start".into(),
+                        "<|start_header_id|>{role}<|end_header_id|>\n{message}\n<|eot_id|>".into(),
+                    ),
+                    ("sys".into(), "system".into()),
+                    ("us".into(), "user".into()),
+                    ("ast".into(), "assistant".into()),
                 ]),
             ),
-            // (
-            //     "SmolLM2-360M-Instruct.Q8_0.gguf".to_string(),
-            //     HashMap::from([
-            //         ("repo".into(), "QuantFactory/SmolLM2-360M-Instruct-GGUF".into()),
-
-            //         ("bos".into(), "<|begin_of_text|>".into()),
-            //         ("eos".into(), "<|eot_id|>".into()),
-            //         ("usr".into(), "<|start_header_id|>user<|end_header_id|>\n".into()),
-            //         ("ast".into(), "<|start_header_id|>assistant<|end_header_id|>\n".into()),
-            //         ("sys".into(), "<|start_header_id|>sys<|end_header_id|>\n".into()),
-            //     ]),
-            // ),
-            // (
-            //     "SmolLM3-Q4_K_M.gguf".to_string(),
-            //     HashMap::from([
-            //         ("repo".into(), "ggml-org/SmolLM3-3B-GGUF".into()),
-
-            //         ("bos".into(), "<|begin_of_text|>".into()),
-            //         ("eos".into(), "<|eot_id|>".into()),
-            //         ("usr".into(), "<|start_header_id|>user<|end_header_id|>\n".into()),
-            //         ("ast".into(), "<|start_header_id|>assistant<|end_header_id|>\n".into()),
-            //         ("sys".into(), "<|start_header_id|>sys<|end_header_id|>\n".into()),
-            //     ]),
-            // ),
+            (
+                "SmolLM2-360M-Instruct.Q8_0.gguf".to_string(),
+                HashMap::from([
+                    (
+                        "repo".into(),
+                        "QuantFactory/SmolLM2-360M-Instruct-GGUF".into(),
+                    ),
+                    (
+                        "prompt_format".into(),
+                        "<|im_start|>{role}\n{message}<|im_end|>\n".into(),
+                    ),
+                    ("sys".into(), "system".into()),
+                    ("us".into(), "user".into()),
+                    ("ast".into(), "assistant".into()),
+                ]),
+            ),
+            (
+                "SmolLM3-Q4_K_M.gguf".to_string(),
+                HashMap::from([
+                    ("repo".into(), "ggml-org/SmolLM3-3B-GGUF".into()),
+                    (
+                        "prompt_format".into(),
+                        "<|im_start|>{role}\n{message}<|im_end|>\n".into(),
+                    ),
+                    ("sys".into(), "system".into()),
+                    ("us".into(), "user".into()),
+                    ("ast".into(), "assistant".into()),
+                ]),
+            ),
         ]);
 
         Ok(Config {
             model_name: "".to_string(),
             db_name: "data_store.sqlite".to_string(),
-            batch_size,
+            batch_size: batch_size,
             max_context_length: max_tokens_clamped - max_context_size,
-            max_context_size,
-            models,
+            max_context_size: max_context_size,
+            system_prompt: system_prompt.to_string(),
+            models: models,
         })
     }
 
