@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue';
-import { kBlock, List, ListItem, Button, Dialog } from 'konsta/vue';
+import { kBlock, List, ListItem, Button, Dialog, kProgressbar } from 'konsta/vue';
 import { listen } from '@tauri-apps/api/event';
 import { useConversations } from '../composables/useConversations';
 
@@ -115,9 +115,10 @@ onUnmounted(() => {
         <template v-else-if="isDownloading(name)" #after>
           <div class="flex flex-col gap-1 w-32">
             <div class="text-xs text-gray-600">{{ Math.round(downloadProgress) }}%</div>
-            <div class="w-full bg-gray-200 rounded h-2">
+            <!-- <div class="w-full bg-gray-200 rounded h-2">
               <div class="bg-blue-500 h-2 rounded transition-all" :style="{ width: downloadProgress + '%' }"></div>
-            </div>
+            </div> -->
+            <k-progressbar :progress="downloadProgress/100" />
           </div>
         </template>
 

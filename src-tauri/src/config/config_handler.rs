@@ -2,7 +2,7 @@ use std::collections::{BTreeMap, HashMap};
 
 use crate::config::path_resolver;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Config {
     pub model_name: String,
     pub batch_size: i32,
@@ -40,58 +40,42 @@ impl Config {
 
         let models = BTreeMap::from([
             (
-                "Llama-3.2-1B-Instruct-Q4_K_S.gguf".to_string(),
+                "gemma-3-1b-it-Q4_K_M.gguf".to_string(),
+                HashMap::from([
+                    ("repo".into(), "unsloth/gemma-3-1b-it-GGUF".into()),
+                    ("prefix".into(), "<start_of_turn>".into()),
+                    ("suffix".into(), "\n".into()),
+                    ("eot".into(), "<end_of_turn>\n".into()),
+                    ("sys".into(), "model".into()),
+                    ("us".into(), "user".into()),
+                    ("ast".into(), "model".into()),
+                    ("supports_vision".into(), "true".into()),
+                ]),
+            ),
+            (
+                "Llama-3.2-1B-Instruct-Q4_K_M.gguf".to_string(),
                 HashMap::from([
                     ("repo".into(), "bartowski/Llama-3.2-1B-Instruct-GGUF".into()),
-                    (
-                        "prompt_format".into(),
-                        "<|start_header_id|>{role}<|end_header_id|>\n{message}\n<|eot_id|>".into(),
-                    ),
+                    ("prefix".into(), "<|start_header_id|>".into()),
+                    ("suffix".into(), "<|end_header_id|>\n".into()),
+                    ("eot".into(), "<|eot_id|>".into()),
                     ("sys".into(), "system".into()),
                     ("us".into(), "user".into()),
                     ("ast".into(), "assistant".into()),
+                    ("supports_vision".into(), "false".into()),
                 ]),
             ),
             (
-                "Llama-3.2-1B-Instruct-Q6_K_L.gguf".to_string(),
+                "SmolLM2-360M-Instruct.Q4_K_M.gguf".to_string(),
                 HashMap::from([
-                    ("repo".into(), "bartowski/Llama-3.2-1B-Instruct-GGUF".into()),
-                    (
-                        "prompt_start".into(),
-                        "<|start_header_id|>{role}<|end_header_id|>\n{message}\n<|eot_id|>".into(),
-                    ),
+                    ("repo".into(), "QuantFactory/SmolLM2-360M-Instruct-GGUF".into()),
+                    ("prefix".into(), "<|im_start|>".into()),
+                    ("suffix".into(), "\n".into()),
+                    ("eot".into(), "<|im_end|>\n".into()),
                     ("sys".into(), "system".into()),
                     ("us".into(), "user".into()),
                     ("ast".into(), "assistant".into()),
-                ]),
-            ),
-            (
-                "SmolLM2-360M-Instruct.Q8_0.gguf".to_string(),
-                HashMap::from([
-                    (
-                        "repo".into(),
-                        "QuantFactory/SmolLM2-360M-Instruct-GGUF".into(),
-                    ),
-                    (
-                        "prompt_format".into(),
-                        "<|im_start|>{role}\n{message}<|im_end|>\n".into(),
-                    ),
-                    ("sys".into(), "system".into()),
-                    ("us".into(), "user".into()),
-                    ("ast".into(), "assistant".into()),
-                ]),
-            ),
-            (
-                "SmolLM3-Q4_K_M.gguf".to_string(),
-                HashMap::from([
-                    ("repo".into(), "ggml-org/SmolLM3-3B-GGUF".into()),
-                    (
-                        "prompt_format".into(),
-                        "<|im_start|>{role}\n{message}<|im_end|>\n".into(),
-                    ),
-                    ("sys".into(), "system".into()),
-                    ("us".into(), "user".into()),
-                    ("ast".into(), "assistant".into()),
+                    ("supports_vision".into(), "false".into()),
                 ]),
             ),
         ]);

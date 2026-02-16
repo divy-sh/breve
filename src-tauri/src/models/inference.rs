@@ -137,49 +137,47 @@ impl Inference {
         Ok(message)
     }
 
-    // Updated signature to accept &LlamaModel
-    pub fn format_prompt(
-        &self,
-        conv: &Conversation,
-        model: &LlamaModel,
-    ) -> Result<Vec<LlamaToken>, String> {
-        let prompt_start = self.model_attrs.get("prompt_start").cloned().unwrap();
-        let prompt_end = self.model_attrs.get("prompt_end").cloned().unwrap();
-        let sys = self.model_attrs.get("sys").cloned().unwrap();
+    pub fn format_prompt(&self, conv: &Conversation, model: &LlamaModel) -> Result<Vec<LlamaToken>, String> {
+        let prefix = self.model_attrs.get("prefix").map(|s| s.as_str()).unwrap_or("");
+        let suffix = self.model_attrs.get("suffix").map(|s| s.as_str()).unwrap_or("");
+        let eot = self.model_attrs.get("eot").map(|s| s.as_str()).unwrap_or("");
 
-        let mut formatted_prompt = prompt_start
-            .replace("{role}", &sys)
-            .replace("{message}", &self.system_prompt)
-            + prompt_end.clone().as_str();
-        let end_str = "<|start_header_id|>assistant<|end_header_id|>\n";
+        let sys_role = self.model_attrs.get("sys").unwrap();
+        let user_role = self.model_attrs.get("us").unwrap();
+        let ast_role = self.model_attrs.get("ast").unwrap();
+
+        // 1. Build System Block
+        let mut full_prompt = format!("{}{}{}{}{}", prefix, sys_role, suffix, self.system_prompt, eot);
+        
         let mut message_segments = Vec::new();
-        let mut total_len = formatted_prompt.len() + end_str.len();
+        let mut current_len = full_prompt.len();
 
-        // 4. Iterate backwards to respect context window
+        // 2. Build Message History (Reverse for context window)
         for msg in conv.body.iter().rev() {
-            let segment = format!(
-                "<|start_header_id|>{}<|end_header_id|>\n{}\n<|eot_id|>",
-                msg.role, msg.content
-            );
+            let role = if msg.role == "user" { user_role } else { ast_role };
+            
+            // Handle image/document input for Gemma-3
+            let content: String = msg.content.clone();
 
-            if total_len + segment.len() < self.max_context_length.try_into().unwrap() {
-                total_len += segment.len();
+            let segment = format!("{}{}{}{}{}", prefix, role, suffix, content, eot);
+
+            if current_len + segment.len() < self.max_context_length as usize {
+                current_len += segment.len();
                 message_segments.push(segment);
             } else {
                 break;
             }
         }
 
-        // 5. Assemble and Tokenize
         message_segments.reverse();
-        for segment in message_segments {
-            formatted_prompt.push_str(&segment);
+        for seg in message_segments {
+            full_prompt.push_str(&seg);
         }
 
-        formatted_prompt.push_str(&end_str);
+        // 3. Open Assistant Response
+        full_prompt.push_str(&format!("{}{}{}", prefix, ast_role, suffix));
 
-        model
-            .str_to_token(&formatted_prompt, AddBos::Always)
+        model.str_to_token(&full_prompt, AddBos::Always)
             .map_err(|e| format!("Tokenization failed: {:?}", e))
     }
 }
