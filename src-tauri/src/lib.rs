@@ -156,7 +156,7 @@ fn get_available_models() -> BTreeMap<String, HashMap<String, String>> {
 fn get_default_model(state: State<'_, Arc<Mutex<ConversationController>>>) -> String {
     state
         .lock()
-        .map(|c| c.config.get_model_name())
+        .map(|c| c.config.model_name.clone())
         .unwrap_or_default()
 }
 
@@ -167,7 +167,7 @@ fn get_model_status(state: State<'_, Arc<Mutex<ConversationController>>>) -> Str
         Err(_) => return UNSET.into(),
     };
 
-    let name = controller.config.get_model_name();
+    let name = controller.config.model_name.clone();
     if name.is_empty() {
         return UNSET.into();
     }
@@ -247,7 +247,7 @@ fn delete_model(
     }
 
     let mut controller = state.lock().map_err(|_| "Lock poisoned")?;
-    if controller.config.get_model_name() == model_name {
+    if controller.config.model_name == model_name {
         controller.config.model_name.clear();
         controller.inference = None;
 
@@ -310,7 +310,7 @@ fn activate_model(
     {
         let mut controller = state.lock().map_err(|_| "Controller lock poisoned")?;
 
-        if controller.config.get_model_name() == model_name && controller.inference.is_some() {
+        if controller.config.model_name == model_name && controller.inference.is_some() {
             return Ok(());
         }
 

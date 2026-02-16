@@ -8,23 +8,15 @@ use llama_cpp_2::model::{AddBos, Special};
 use llama_cpp_2::sampling::LlamaSampler;
 use llama_cpp_2::token::LlamaToken;
 use std::collections::HashMap;
-use std::io::Write;
 use std::num::NonZero;
-use std::sync::OnceLock;
+use std::sync::Arc;
 use tauri::{Emitter, Window};
 
 use super::conversation::Conversation;
 use crate::config::config_handler::Config;
 
-// Global Singleton to hold Model and Backend
-struct GlobalLlama {
-    backend: LlamaBackend,
-    model: LlamaModel,
-}
-
-static LLAMA_GLOBAL: OnceLock<GlobalLlama> = OnceLock::new();
-
 pub struct Inference {
+    model: Arc<LlamaModel>,
     pub ctx: LlamaContext<'static>,
     pub batch_size: i32,
     pub max_context_length: i32,
@@ -34,37 +26,38 @@ pub struct Inference {
 }
 
 impl Inference {
-    pub fn init(config: &Config) -> Result<Inference, String> {
-        let global_resources = LLAMA_GLOBAL.get_or_init(|| {
-            let backend = LlamaBackend::init().expect("Backend init failed");
-
-            let model = LlamaModel::load_from_file(
+    pub fn init(config: &Config) -> Result<Self, String> {
+        let backend = Arc::new(
+            LlamaBackend::init().map_err(|e| format!("Backend init failed: {:?}", e))?
+        );
+        let model = Arc::new(
+            LlamaModel::load_from_file(
                 &backend,
                 config.get_model_path(),
                 &LlamaModelParams::default(),
             )
-            .expect("Model load failed");
-
-            GlobalLlama { backend, model }
-        });
+            .map_err(|e| format!("Model load failed: {:?}", e))?
+        );
 
         let ctx_params = LlamaContextParams::default()
             .with_n_batch(config.batch_size.try_into().unwrap())
             .with_n_ctx(Some(
-                NonZero::try_from((config.max_context_length + config.max_context_size) as u32)
-                    .unwrap(),
+                NonZero::try_from(config.batch_size as u32).unwrap(),
             ));
 
-        let ctx = global_resources
-            .model
-            .new_context(&global_resources.backend, ctx_params)
-            .map_err(|e| format!("Session creation error: {:?}", e))?;
+        let ctx = unsafe {
+            let internal_ctx = model
+                .new_context(&backend, ctx_params)
+                .map_err(|e| format!("Session creation error: {:?}", e))?;
+            std::mem::transmute::<LlamaContext<'_>, LlamaContext<'static>>(internal_ctx)
+        };
 
-        Ok(Inference {
+        Ok(Self {
+            model,
             ctx,
             batch_size: config.batch_size,
             max_context_length: config.max_context_length,
-            max_output_length: config.max_context_size,
+            max_output_length: config.max_output_length,
             model_attrs: config
                 .get_available_models()
                 .get(&config.model_name)
@@ -75,10 +68,7 @@ impl Inference {
     }
 
     pub fn generate_text(&mut self, conv: &Conversation, window: Window) -> Result<String, String> {
-        let global = LLAMA_GLOBAL.get().ok_or("Global model not initialized")?;
-        let model = &global.model;
-
-        // Clear cache as we re-send full history formatted for the specific model
+        let model = &self.model;
         self.ctx.clear_kv_cache();
 
         let mut batch = LlamaBatch::new(self.batch_size as usize, 8);
@@ -90,95 +80,65 @@ impl Inference {
             batch.add(token, i, &[0], i == last_index).unwrap();
         }
 
-        if let Err(e) = self.ctx.decode(&mut batch) {
-            return Err(format!("Initial decode failed: {:?}", e));
-        }
+        self.ctx.decode(&mut batch).map_err(|e| format!("Decode failed: {:?}", e))?;
 
         let mut n_cur = batch.n_tokens();
+        let cur = batch.n_tokens() as i32;
         let mut decoder = encoding_rs::UTF_8.new_decoder();
         let mut sampler = LlamaSampler::greedy();
         let mut message = String::new();
 
-        while n_cur <= (self.max_context_length + self.max_output_length)
-            && (n_cur - batch.n_tokens()) <= self.max_output_length
-        {
+        while n_cur < self.batch_size && n_cur - cur < self.max_output_length {
             let token = sampler.sample(&self.ctx, batch.n_tokens() - 1);
             sampler.accept(token);
-
-            if token == model.token_eos() {
-                break;
-            }
+            if token == model.token_eos() { break; }
 
             let output_bytes = model.token_to_bytes(token, Special::Tokenize).unwrap();
             let mut output_string = String::with_capacity(32);
-            let _ = decoder.decode_to_string(&output_bytes, &mut output_string, false);
+            _ = decoder.decode_to_string(&output_bytes, &mut output_string, false);
 
             message += &output_string;
-
-            if let Err(e) = window.emit("llm-stream", output_string.clone()) {
-                eprintln!("Emit error: {:?}", e);
-            }
-
-            let _ = std::io::stdout().flush();
+            let _ = window.emit("llm-stream", output_string.clone());
             batch.clear();
-
-            if let Err(e) = batch.add(token, n_cur, &[0], true) {
-                eprintln!("Batch add error: {:?}", e);
-                break;
-            }
-
+            batch.add(token, n_cur, &[0], true).unwrap();
             n_cur += 1;
 
-            if let Err(e) = self.ctx.decode(&mut batch) {
-                eprintln!("Decode failed at n_cur = {}: {:?}", n_cur, e);
-                break;
-            }
+            if let Err(_) = self.ctx.decode(&mut batch) { break; }
         }
         Ok(message)
     }
 
     pub fn format_prompt(&self, conv: &Conversation, model: &LlamaModel) -> Result<Vec<LlamaToken>, String> {
-        let prefix = self.model_attrs.get("prefix").map(|s| s.as_str()).unwrap_or("");
-        let suffix = self.model_attrs.get("suffix").map(|s| s.as_str()).unwrap_or("");
-        let eot = self.model_attrs.get("eot").map(|s| s.as_str()).unwrap_or("");
+        let prefix = self.get_attr("prefix");
+        let suffix = self.get_attr("suffix");
+        let eot = self.get_attr("eot");
+        let sys_role = self.get_attr("sys");
+        let user_role = self.get_attr("us");
+        let ast_role = self.get_attr("ast");
 
-        let sys_role = self.model_attrs.get("sys").unwrap();
-        let user_role = self.model_attrs.get("us").unwrap();
-        let ast_role = self.model_attrs.get("ast").unwrap();
-
-        // 1. Build System Block
         let mut full_prompt = format!("{}{}{}{}{}", prefix, sys_role, suffix, self.system_prompt, eot);
-        
         let mut message_segments = Vec::new();
         let mut current_len = full_prompt.len();
 
-        // 2. Build Message History (Reverse for context window)
         for msg in conv.body.iter().rev() {
             let role = if msg.role == "user" { user_role } else { ast_role };
-            
-            // Handle image/document input for Gemma-3
-            let content: String = msg.content.clone();
-
-            let segment = format!("{}{}{}{}{}", prefix, role, suffix, content, eot);
+            let segment = format!("{}{}{}{}{}", prefix, role, suffix, msg.content, eot);
 
             if current_len + segment.len() < self.max_context_length as usize {
                 current_len += segment.len();
                 message_segments.push(segment);
-            } else {
-                break;
-            }
+            } else { break; }
         }
 
         message_segments.reverse();
-        for seg in message_segments {
-            full_prompt.push_str(&seg);
-        }
-
-        // 3. Open Assistant Response
+        for seg in message_segments { full_prompt.push_str(&seg); }
         full_prompt.push_str(&format!("{}{}{}", prefix, ast_role, suffix));
 
-        model.str_to_token(&full_prompt, AddBos::Always)
-            .map_err(|e| format!("Tokenization failed: {:?}", e))
+        model.str_to_token(&full_prompt, AddBos::Always).map_err(|e| format!("{:?}", e))
+    }
+
+    fn get_attr(&self, key: &str) -> &str {
+        self.model_attrs.get(key).map(|s| s.as_str()).unwrap_or("")
     }
 }
 

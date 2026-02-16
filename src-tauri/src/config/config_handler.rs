@@ -7,10 +7,10 @@ pub struct Config {
     pub model_name: String,
     pub batch_size: i32,
     pub max_context_length: i32,
-    pub max_context_size: i32,
+    pub max_output_length: i32,
     pub system_prompt: String,
+    pub models: BTreeMap<String, HashMap<String, String>>,
     db_name: String,
-    models: BTreeMap<String, HashMap<String, String>>,
 }
 
 impl Config {
@@ -29,9 +29,9 @@ impl Config {
         let max_context_tokens = (memory_for_context / bytes_per_token) as i32;
 
         // Cap at a sane upper bound (for stability)
-        let max_tokens_clamped = max_context_tokens.clamp(512, 10240);
+        let max_tokens_clamped = max_context_tokens.clamp(4096, 32768);
 
-        let max_context_size = 2048;
+        let max_output_length = 4096;
         let batch_size = max_tokens_clamped;
 
         let system_prompt = "You are a friendly AI assistant named Breve.
@@ -84,27 +84,11 @@ impl Config {
             model_name: "".to_string(),
             db_name: "data_store.sqlite".to_string(),
             batch_size: batch_size,
-            max_context_length: max_tokens_clamped - max_context_size,
-            max_context_size: max_context_size,
+            max_context_length: max_tokens_clamped - max_output_length,
+            max_output_length: max_output_length,
             system_prompt: system_prompt.to_string(),
             models: models,
         })
-    }
-
-    pub fn get_max_context_size(&self) -> i32 {
-        self.max_context_size
-    }
-
-    pub fn get_max_context_length(&self) -> i32 {
-        self.max_context_length
-    }
-
-    pub fn get_batch_size(&self) -> i32 {
-        self.batch_size
-    }
-
-    pub fn get_model_name(&self) -> String {
-        self.model_name.clone()
     }
 
     pub fn get_model_path(&self) -> String {
