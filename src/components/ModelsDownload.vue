@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue';
-import { kBlock, List, ListItem, Button, Dialog, kProgressbar } from 'konsta/vue';
+import { kBlock, List, ListItem, kButton, Dialog, kProgressbar } from 'konsta/vue';
 import { listen } from '@tauri-apps/api/event';
 import { useConversations } from '../composables/useConversations';
 
@@ -103,27 +103,26 @@ onUnmounted(() => {
       >
         <template v-if="isDownloaded(name)" #after>
           <div class="flex gap-2">
-            <Button small outline @click="onSetDefault(name)" :disabled="isDefault(name)">
-              {{ isDefault(name) ? 'Default' : 'Select' }}
-            </Button>
-            <Button small outline color="red" @click="confirmDelete(name)" :disabled="isDefault(name)">
-              Delete
-            </Button>
+            <k-button small tonal @click="onSetDefault(name)" :disabled="isDefault(name)">
+              <i class="pi pi-check" style="font-size: 1rem"></i>
+            </k-button>
+            <k-button small tonal class="k-color-brand-red" @click="confirmDelete(name)" :disabled="isDefault(name)">
+              <i class="pi pi-trash" style="font-size: 1rem"></i>
+            </k-button>
           </div>
         </template>
 
         <template v-else-if="isDownloading(name)" #after>
           <div class="flex flex-col gap-1 w-32">
             <div class="text-xs text-gray-600">{{ Math.round(downloadProgress) }}%</div>
-            <!-- <div class="w-full bg-gray-200 rounded h-2">
-              <div class="bg-blue-500 h-2 rounded transition-all" :style="{ width: downloadProgress + '%' }"></div>
-            </div> -->
-            <k-progressbar :progress="downloadProgress/100" />
+            <k-progressbar :progress="downloadProgress/100" class="bg-md-light-primary/30 dark:bg-md-dark-primary/30" />
           </div>
         </template>
 
         <template v-else #after>
-          <Button small outline @click="onDownload(name)" :disabled="downloadingModel !== null">Download</Button>
+          <k-button small tonal @click="onDownload(name)" :disabled="downloadingModel !== null">
+            <i class="pi pi-download" style="font-size: 1rem"></i>
+          </k-button>
         </template>
       </ListItem>
     </List>
@@ -134,8 +133,8 @@ onUnmounted(() => {
   <Dialog :opened="showDeleteConfirm" title="Confirm Delete" @backdrop-click="showDeleteConfirm = false">
     <p class="mb-4">Are you sure you want to delete <strong>{{ modelToDelete }}</strong>?</p>
     <div class="flex gap-2">
-      <Button @click="showDeleteConfirm = false" outline>Cancel</Button>
-      <Button @click="proceedDelete" color="red">Delete</Button>
+      <k-button @click="showDeleteConfirm = false" outline>Cancel</k-button>
+      <k-button @click="proceedDelete" color="red">Delete</k-button>
     </div>
   </Dialog>
 </template>
