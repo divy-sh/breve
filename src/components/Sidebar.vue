@@ -71,7 +71,7 @@
       </k-navbar>
       <k-block>
         <k-button @click="emit('create-new'); emit('toggle')" class="new-chat-btn">
-          <i class="pi pi-sparkles">  New Chat</i>
+          <i class="pi pi-pen-to-square">  New Chat</i>
         </k-button>
       </k-block>
       <k-menu-list>

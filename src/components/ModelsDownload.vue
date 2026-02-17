@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue';
-import { kBlock, List, ListItem, kButton, Dialog, kProgressbar } from 'konsta/vue';
+import { kBlock, kBlockTitle, kButton, Dialog, kProgressbar, kCard } from 'konsta/vue';
 import { listen } from '@tauri-apps/api/event';
 import { useConversations } from '../composables/useConversations';
 
@@ -23,10 +23,19 @@ const downloadProgress = ref(0);
 const showDeleteConfirm = ref(false);
 const modelToDelete = ref<string | null>(null);
 
+// ADDED THESE TWO:
+const expandedModels = ref<string[]>([]);
+const toggleExpand = (name: string) => {
+  if (expandedModels.value.includes(name)) {
+    expandedModels.value = expandedModels.value.filter(m => m !== name);
+  } else {
+    expandedModels.value.push(name);
+  }
+};
+
 const isDefault = (name: string) => defaultModel.value === name;
 const isDownloaded = (name: string) => downloadedModels.value.includes(name);
 const isDownloading = (name: string) => downloadingModel.value === name;
-
 
 let unlistenProgress: (() => void) | null = null;
 
@@ -39,16 +48,13 @@ async function refreshVariables() {
 
 async function onDownload(name: string) {
   if (downloadingModel.value != null) return;
-
   downloadingModel.value = name;
   downloadProgress.value = 0;
-
   try {
     await downloadModel(name);
     await refreshVariables();
   } catch (err) {
     console.error("Download failed:", err);
-    alert(`Failed to download model: ${err}`);
   } finally {
     downloadingModel.value = null;
     downloadProgress.value = 0;
@@ -61,7 +67,6 @@ async function onSetDefault(name: string) {
     await refreshVariables();    
   } catch (err) {
     console.error("Set default failed:", err);
-    alert(`Failed to set default model: ${err}`);
   }
 }
 
@@ -80,7 +85,6 @@ async function proceedDelete() {
 
 onMounted(async () => {
   await refreshVariables();
-
   unlistenProgress = await listen('download-progress', (event) => {
     downloadProgress.value = event.payload as number;
   });
@@ -92,49 +96,62 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <k-block strong>
-    <h3 class="text-lg font-semibold mb-4">Models</h3>
 
-    <List v-if="Object.keys(availableModels).length > 0">
-      <ListItem
-        v-for="name in Object.keys(availableModels)"
-        :key="name"
-        :title="name"
-      >
-        <template v-if="isDownloaded(name)" #after>
-          <div class="flex gap-2">
-            <k-button small tonal @click="onSetDefault(name)" :disabled="isDefault(name)">
-              <i class="pi pi-check" style="font-size: 1rem"></i>
+  <k-block v-if="Object.keys(availableModels).length > 0">
+    <k-block-title>Models</k-block-title>
+    <k-card 
+      v-for="name in Object.keys(availableModels)" 
+      :key="name"
+      footer-divider
+    >
+      <template #header>
+        <h3>{{ name }}</h3>
+      </template>
+
+      <div v-if="isDownloading(name)" class="mt-4">
+        <div class="flex justify-between text-xs mb-1">
+          <span>Downloading...</span>
+          <span>{{ Math.round(downloadProgress) }}%</span>
+        </div>
+        <k-progressbar :progress="downloadProgress / 100" />
+      </div>
+      
+      <p>Params: {{ availableModels[name]['params' as any] }}</p>
+
+      <div v-if="expandedModels.includes(name)">
+        <p><strong>Status:</strong> {{ isDownloaded(name) ? 'Downloaded' : 'Available' }}</p>
+      </div>
+
+      <template #footer>
+        <div class="flex w-full -m-2">
+          <template v-if="isDownloaded(name)">
+            <k-button clear class="w-1/3 rounded-none" @click="onSetDefault(name)" :disabled="isDefault(name)">
+              <i :class="isDefault(name) ? 'pi pi-check-circle' : 'pi pi-play-circle'"></i>
             </k-button>
-            <k-button small tonal class="k-color-brand-red" @click="confirmDelete(name)" :disabled="isDefault(name)">
-              <i class="pi pi-trash" style="font-size: 1rem"></i>
+            <k-button clear class="w-1/3 rounded-none text-red-500" @click="confirmDelete(name)" :disabled="isDefault(name)">
+              <i class="pi pi-trash"></i>
             </k-button>
-          </div>
-        </template>
+          </template>
 
-        <template v-else-if="isDownloading(name)" #after>
-          <div class="flex flex-col gap-1 w-32">
-            <div class="text-xs text-gray-600">{{ Math.round(downloadProgress) }}%</div>
-            <k-progressbar :progress="downloadProgress/100" class="bg-md-light-primary/30 dark:bg-md-dark-primary/30" />
-          </div>
-        </template>
+          <template v-else>
+            <k-button clear class="w-2/3 ounded-none" @click="onDownload(name)" :disabled="downloadingModel !== null">
+              <i class="pi pi-download mr-2"></i> Download
+            </k-button>
+          </template>
 
-        <template v-else #after>
-          <k-button small tonal @click="onDownload(name)" :disabled="downloadingModel !== null">
-            <i class="pi pi-download" style="font-size: 1rem"></i>
+          <k-button clear class="w-1/3 rounded-none" @click="toggleExpand(name)">
+            <i :class="expandedModels.includes(name) ? 'pi pi-angle-up' : 'pi pi-angle-down'"></i>
           </k-button>
-        </template>
-      </ListItem>
-    </List>
-
-    <p v-else class="text-gray-600 text-center py-4">No available models.</p>
+        </div>
+      </template>
+    </k-card>
   </k-block>
-
+  
   <Dialog :opened="showDeleteConfirm" title="Confirm Delete" @backdrop-click="showDeleteConfirm = false">
     <p class="mb-4">Are you sure you want to delete <strong>{{ modelToDelete }}</strong>?</p>
     <div class="flex gap-2">
       <k-button @click="showDeleteConfirm = false" outline>Cancel</k-button>
-      <k-button @click="proceedDelete" color="red">Delete</k-button>
+      <k-button @click="proceedDelete" class="k-color-brand-red">Delete</k-button>
     </div>
   </Dialog>
 </template>

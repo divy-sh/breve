@@ -50,6 +50,7 @@ impl Config {
                     ("us".into(), "user".into()),
                     ("ast".into(), "model".into()),
                     ("supports_vision".into(), "true".into()),
+                    ("params".into(), "1B".into()),
                 ]),
             ),
             (
@@ -63,6 +64,7 @@ impl Config {
                     ("us".into(), "user".into()),
                     ("ast".into(), "assistant".into()),
                     ("supports_vision".into(), "false".into()),
+                    ("params".into(), "1B".into()),
                 ]),
             ),
             (
@@ -76,6 +78,7 @@ impl Config {
                     ("us".into(), "user".into()),
                     ("ast".into(), "assistant".into()),
                     ("supports_vision".into(), "false".into()),
+                    ("params".into(), "360M".into()),
                 ]),
             ),
         ]);
