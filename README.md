@@ -13,9 +13,12 @@ Breve is a cross-platform application built using [Tauri](https://tauri.app/), [
 - Hot-reloading and easy development experience
 
 ## Screenshots
-![alt text](media/screenshot_1.png)
-![alt text](media/screenshot_2.png)
-![alt text](media/screenshot_3.png)
+![alt text](media/screen1.png)
+![alt text](media/screen2.png)
+![alt text](media/screen3.png)
+![alt text](media/screen4.png)
+![alt text](media/screen5.png)
+![alt text](media/screen6.png)
 
 ## Architecture
 
@@ -48,12 +51,12 @@ Breve is a cross-platform application built using [Tauri](https://tauri.app/), [
    npm install
    ```
 
-3. If you want a specific model, change the name and url of the model in the file:
+3. You can choose and add any new models to config_handler.rs and it would show up on the download page.
    ```sh
    config_handler.rs
    ```
 
-4. The model will be downloaded on the first run to the appLocalData directory of yor respective system.
+4. You will get the download model page on first start.
 
 5. Run the development server:
    ```sh
