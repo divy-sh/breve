@@ -42,7 +42,10 @@ impl Config {
             (
                 "gemma-3-1b-it-Q4_K_M.gguf".to_string(),
                 HashMap::from([
+                    ("name".into(), "Gemma-3-1B-It".into()),
                     ("repo".into(), "unsloth/gemma-3-1b-it-GGUF".into()),
+                    ("size".into(), "1GB".into()),
+
                     ("prefix".into(), "<start_of_turn>".into()),
                     ("suffix".into(), "\n".into()),
                     ("eot".into(), "<end_of_turn>\n".into()),
@@ -56,7 +59,10 @@ impl Config {
             (
                 "Llama-3.2-1B-Instruct-Q4_K_M.gguf".to_string(),
                 HashMap::from([
+                    ("name".into(), "Llama-3.2-1B-Instruct".into()),
                     ("repo".into(), "bartowski/Llama-3.2-1B-Instruct-GGUF".into()),
+                    ("size".into(), "1GB".into()),
+
                     ("prefix".into(), "<|start_header_id|>".into()),
                     ("suffix".into(), "<|end_header_id|>\n".into()),
                     ("eot".into(), "<|eot_id|>".into()),
@@ -70,7 +76,10 @@ impl Config {
             (
                 "SmolLM2-360M-Instruct.Q4_K_M.gguf".to_string(),
                 HashMap::from([
+                    ("name".into(), "SmolLM2-360M-Instruct".into()),
                     ("repo".into(), "QuantFactory/SmolLM2-360M-Instruct-GGUF".into()),
+                    ("size".into(), "1GB".into()),
+
                     ("prefix".into(), "<|im_start|>".into()),
                     ("suffix".into(), "\n".into()),
                     ("eot".into(), "<|im_end|>\n".into()),
