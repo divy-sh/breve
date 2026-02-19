@@ -122,11 +122,19 @@ onUnmounted(() => {
         </div>
         
         <!-- expanded view -->
-          <div v-if="expandedModels.includes(name)">
-            <k-chip class="m-0.5">Status: {{ isDownloaded(name) ? 'Downloaded' : 'Available' }}</k-chip>
-            <k-chip class="m-0.5"> {{ availableModels[name]['repo' as any] }}</k-chip>
-            <k-chip class="m-0.5">Size: {{ availableModels[name]['size' as any] || 'Unknown' }}</k-chip>
-          </div>
+        <div v-if="expandedModels.includes(name)">
+          <k-chip class="m-0.5 max-w-full">
+            <span class="truncate">Status: {{ isDownloaded(name) ? 'Downloaded' : 'Available' }}</span>
+          </k-chip>
+
+          <k-chip class="m-0.5 max-w-full">
+            <span class="truncate">{{ availableModels[name]['repo' as any] }}</span>
+          </k-chip>
+
+          <k-chip class="m-0.5 max-w-full">
+            <span class="truncate">Size: {{ availableModels[name]['size' as any] }}</span>
+          </k-chip>
+        </div>
         
         <!-- buttons to show when the model is downloaded -->
         <template v-if="isDownloaded(name)">

@@ -14,7 +14,7 @@ pub struct Conversation {
 }
 
 impl Conversation {
-    /// Create a new conversation
+    // Create a new conversation
     pub fn new(id: String, title: String) -> Self {
         Conversation {
             id,
@@ -23,7 +23,7 @@ impl Conversation {
         }
     }
 
-    /// Add a message to the conversation
+    // Add a message to the conversation
     pub fn add_message(&mut self, role: &str, content: &str) {
         self.body.push(Message {
             role: role.to_string(),
@@ -31,27 +31,27 @@ impl Conversation {
         });
     }
 
-    /// Get the last message (if any)
+    // Get the last message (if any)
     pub fn get_last_message(&self) -> Option<&Message> {
         self.body.last()
     }
 
-    /// Update the title of the conversation
+    // Update the title of the conversation
     pub fn update_title(&mut self, new_title: &str) {
         self.title = new_title.to_string();
     }
 
-    /// Get all messages from a specific role (e.g., "user")
+    // Get all messages from a specific role (e.g., "user")
     pub fn get_messages_by_role(&self, role: &str) -> Vec<&Message> {
         self.body.iter().filter(|msg| msg.role == role).collect()
     }
 
-    /// Check if the conversation is empty
+    // Check if the conversation is empty
     pub fn is_empty(&self) -> bool {
         self.body.is_empty()
     }
 
-    /// Clear all messages in the conversation
+    // Clear all messages in the conversation
     pub fn clear_messages(&mut self) {
         self.body.clear();
     }
