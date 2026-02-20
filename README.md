@@ -51,9 +51,9 @@ Breve is a cross-platform application built using [Tauri](https://tauri.app/), [
    npm install
    ```
 
-3. You can choose and add any new models to config_handler.rs and it would show up on the download page.
+3. You can choose and add any new models to infrastructure/config.rs and it would show up on the download page.
    ```sh
-   config_handler.rs
+   config.rs
    ```
 
 4. You will get the download model page on first start.
