@@ -1,4 +1,4 @@
-use std::sync::{Arc, Mutex};
+use std::sync::Mutex;
 
 pub mod conversation;
 pub mod inference;
@@ -6,9 +6,9 @@ pub mod infrastructure;
 pub mod models;
 pub mod settings;
 
-use conversation::service::ConversationController;
-use settings::service::SettingsController;
 use tauri::Manager;
+
+use crate::infrastructure::app::App;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -18,24 +18,17 @@ pub fn run() {
         .setup(|app| {
             infrastructure::path_resolver::init_app_paths(app.handle().clone());
 
-            app.manage(Arc::new(Mutex::new(ConversationController::new())));
-            app.manage(Arc::new(Mutex::new(SettingsController::new())));
+            let mut app_inner = App::init()?;
 
-            let settings_state = app.state::<Arc<Mutex<SettingsController>>>();
-            let convo_state = app.state::<Arc<Mutex<ConversationController>>>();
+            let saved_model =
+                settings::service::get_config("model_name".to_string(), &mut app_inner)
+                    .unwrap_or_default();
 
-            let saved_model = {
-                let settings_lock = settings_state.lock().ok();
-                settings_lock.and_then(|s| s.get_config("model_name".to_string()).ok())
-            };
-
-            if let Some(model_name) = saved_model {
-                let _ = inference::service::activate_model(
-                    model_name,
-                    Arc::clone(settings_state.inner()),
-                    Arc::clone(convo_state.inner()),
-                );
+            if !saved_model.is_empty() {
+                let _ = inference::service::activate_model(saved_model, &mut app_inner);
             }
+
+            app.manage(Mutex::new(app_inner));
 
             Ok(())
         })

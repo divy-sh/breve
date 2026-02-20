@@ -1,10 +1,7 @@
-use std::sync::{Arc, Mutex};
-
 use crate::{
-    conversation::service::ConversationController,
     inference::models::Inference,
-    infrastructure::{config::Config, path_resolver},
-    settings::service::SettingsController,
+    infrastructure::{app::App, config::Config, path_resolver},
+    settings,
 };
 
 fn validate_model(config: &Config, model_name: &str) -> Result<(), String> {
@@ -21,56 +18,23 @@ fn validate_model(config: &Config, model_name: &str) -> Result<(), String> {
     Ok(())
 }
 
-pub fn activate_model(
-    model_name: String,
-    settings: Arc<Mutex<SettingsController>>,
-    state: Arc<Mutex<ConversationController>>,
-) -> Result<(), String> {
-    let cfg = {
-        let controller = state.lock().map_err(|_| "Controller lock poisoned")?;
-        controller.config.clone()
-    };
-
-    validate_model(&cfg, &model_name)?;
+pub fn activate_model(model_name: String, app: &mut App) -> Result<(), String> {
+    validate_model(&app.config, &model_name)?;
     // persist
-    settings
-        .lock()
-        .map_err(|_| "Settings lock poisoned")?
-        .set_config("model_name".into(), model_name.clone())
+    settings::service::set_config("model_name".into(), model_name.clone(), app)
         .map_err(|e| e.to_string())?;
 
-    // update controller
-    {
-        let mut controller = state.lock().map_err(|_| "Controller lock poisoned")?;
+    app.config.model_name = model_name.clone();
 
-        if controller.config.model_name == model_name && controller.inference.is_some() {
-            return Ok(());
-        }
-
-        controller.set_model_name(model_name.clone());
-        controller.inference = None;
-    }
-
-    // init inference async
-    let state_clone = Arc::clone(&state);
-    std::thread::spawn(move || {
-        let cfg = match state_clone.lock() {
-            Ok(c) => c.config.clone(),
-            Err(_) => return,
-        };
-
-        initialize_inference(cfg, Arc::clone(&state_clone));
-    });
+    initialize_inference(app);
 
     Ok(())
 }
 
-fn initialize_inference(config: Config, state_arc: Arc<Mutex<ConversationController>>) {
-    match Inference::init(&config) {
+fn initialize_inference(app: &mut App) {
+    match Inference::init(&app.config) {
         Ok(inference) => {
-            if let Ok(mut controller) = state_arc.lock() {
-                controller.set_inference(inference);
-            }
+            app.inference = Some(inference);
         }
         Err(e) => eprintln!("Inference init failed: {}", e),
     }

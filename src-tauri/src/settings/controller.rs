@@ -1,24 +1,21 @@
-use std::sync::{Arc, Mutex};
+use std::sync::Mutex;
 
 use tauri::State;
 
-use crate::settings::service::SettingsController;
+use crate::{infrastructure::app::App, settings::service};
 
 #[tauri::command]
-pub fn get_config(
-    key: String,
-    state: State<'_, Arc<Mutex<SettingsController>>>,
-) -> Result<String, String> {
-    let controller = state.lock().map_err(|_| "Lock poisoned")?;
-    controller.get_config(key).map_err(|e| e.to_string())
+pub fn get_config(key: String, app_state: State<'_, Mutex<App>>) -> Result<String, String> {
+    let app = &mut app_state.lock().unwrap();
+    service::get_config(key, app).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
 pub fn set_config(
     key: String,
     value: String,
-    state: State<'_, Arc<Mutex<SettingsController>>>,
+    app_state: State<'_, Mutex<App>>,
 ) -> Result<(), String> {
-    let controller = state.lock().map_err(|_| "Lock poisoned")?;
-    controller.set_config(key, value).map_err(|e| e.to_string())
+    let app = &mut app_state.lock().unwrap();
+    service::set_config(key, value, app).map_err(|e| e.to_string())
 }
