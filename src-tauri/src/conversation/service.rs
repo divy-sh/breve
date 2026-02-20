@@ -1,10 +1,10 @@
 use std::fmt::Error;
 use std::vec;
 
-use crate::config::config_handler::Config;
-use crate::dao::conversation_dao::ConversationDao;
-use crate::models::conversation::Conversation;
-use crate::models::inference::Inference;
+use crate::conversation::models::Conversation;
+use crate::conversation::repository::ConversationDao;
+use crate::inference::models::Inference;
+use crate::infrastructure::config::Config;
 
 use rusqlite::Result;
 use tauri::Window;

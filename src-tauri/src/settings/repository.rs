@@ -1,5 +1,6 @@
-use crate::config::config_handler::Config;
 use rusqlite::{Connection, Result};
+
+use crate::infrastructure::config::Config;
 
 pub struct SettingsDao {
     conn: Connection,

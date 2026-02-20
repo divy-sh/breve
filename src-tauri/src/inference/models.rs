@@ -12,8 +12,8 @@ use std::num::NonZero;
 use std::sync::Arc;
 use tauri::{Emitter, Window};
 
-use super::conversation::Conversation;
-use crate::config::config_handler::Config;
+use crate::conversation::models::Conversation;
+use crate::infrastructure::config::Config;
 
 pub struct Inference {
     model: Arc<LlamaModel>,
@@ -27,23 +27,20 @@ pub struct Inference {
 
 impl Inference {
     pub fn init(config: &Config) -> Result<Self, String> {
-        let backend = Arc::new(
-            LlamaBackend::init().map_err(|e| format!("Backend init failed: {:?}", e))?
-        );
+        let backend =
+            Arc::new(LlamaBackend::init().map_err(|e| format!("Backend init failed: {:?}", e))?);
         let model = Arc::new(
             LlamaModel::load_from_file(
                 &backend,
                 config.get_model_path(),
                 &LlamaModelParams::default(),
             )
-            .map_err(|e| format!("Model load failed: {:?}", e))?
+            .map_err(|e| format!("Model load failed: {:?}", e))?,
         );
 
         let ctx_params = LlamaContextParams::default()
             .with_n_batch(config.batch_size.try_into().unwrap())
-            .with_n_ctx(Some(
-                NonZero::try_from(config.batch_size as u32).unwrap(),
-            ));
+            .with_n_ctx(Some(NonZero::try_from(config.batch_size as u32).unwrap()));
 
         let ctx = unsafe {
             let internal_ctx = model
@@ -80,7 +77,9 @@ impl Inference {
             batch.add(token, i, &[0], i == last_index).unwrap();
         }
 
-        self.ctx.decode(&mut batch).map_err(|e| format!("Decode failed: {:?}", e))?;
+        self.ctx
+            .decode(&mut batch)
+            .map_err(|e| format!("Decode failed: {:?}", e))?;
 
         let mut n_cur = batch.n_tokens();
         let cur = batch.n_tokens() as i32;
@@ -91,7 +90,9 @@ impl Inference {
         while n_cur < self.batch_size && n_cur - cur < self.max_output_length {
             let token = sampler.sample(&self.ctx, batch.n_tokens() - 1);
             sampler.accept(token);
-            if token == model.token_eos() { break; }
+            if token == model.token_eos() {
+                break;
+            }
 
             let output_bytes = model.token_to_bytes(token, Special::Tokenize).unwrap();
             let mut output_string = String::with_capacity(32);
@@ -103,12 +104,18 @@ impl Inference {
             batch.add(token, n_cur, &[0], true).unwrap();
             n_cur += 1;
 
-            if let Err(_) = self.ctx.decode(&mut batch) { break; }
+            if let Err(_) = self.ctx.decode(&mut batch) {
+                break;
+            }
         }
         Ok(message)
     }
 
-    pub fn format_prompt(&self, conv: &Conversation, model: &LlamaModel) -> Result<Vec<LlamaToken>, String> {
+    pub fn format_prompt(
+        &self,
+        conv: &Conversation,
+        model: &LlamaModel,
+    ) -> Result<Vec<LlamaToken>, String> {
         let prefix = self.get_attr("prefix");
         let suffix = self.get_attr("suffix");
         let eot = self.get_attr("eot");
@@ -116,25 +123,38 @@ impl Inference {
         let user_role = self.get_attr("us");
         let ast_role = self.get_attr("ast");
 
-        let mut full_prompt = format!("{}{}{}{}{}", prefix, sys_role, suffix, self.system_prompt, eot);
+        let mut full_prompt = format!(
+            "{}{}{}{}{}",
+            prefix, sys_role, suffix, self.system_prompt, eot
+        );
         let mut message_segments = Vec::new();
         let mut current_len = full_prompt.len();
 
         for msg in conv.body.iter().rev() {
-            let role = if msg.role == "user" { user_role } else { ast_role };
+            let role = if msg.role == "user" {
+                user_role
+            } else {
+                ast_role
+            };
             let segment = format!("{}{}{}{}{}", prefix, role, suffix, msg.content, eot);
 
             if current_len + segment.len() < self.max_context_length as usize {
                 current_len += segment.len();
                 message_segments.push(segment);
-            } else { break; }
+            } else {
+                break;
+            }
         }
 
         message_segments.reverse();
-        for seg in message_segments { full_prompt.push_str(&seg); }
+        for seg in message_segments {
+            full_prompt.push_str(&seg);
+        }
         full_prompt.push_str(&format!("{}{}{}", prefix, ast_role, suffix));
 
-        model.str_to_token(&full_prompt, AddBos::Always).map_err(|e| format!("{:?}", e))
+        model
+            .str_to_token(&full_prompt, AddBos::Always)
+            .map_err(|e| format!("{:?}", e))
     }
 
     fn get_attr(&self, key: &str) -> &str {

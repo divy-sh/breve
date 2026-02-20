@@ -1,9 +1,10 @@
 use std::fmt::Error;
 
 use crate::{
-    config::config_handler::Config,
-    models::conversation::{Conversation, Message},
+    conversation::models::{Conversation, Message},
+    infrastructure::config::Config,
 };
+
 use rusqlite::{Connection, Result, params};
 use serde_json;
 

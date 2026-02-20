@@ -1,6 +1,7 @@
 import { ref } from 'vue';
 import { invoke } from "@tauri-apps/api/core";
 import type { Conversation, ConversationSummary } from '../types';
+import { useSettings } from './useSettings';
 
 const conversations = ref<ConversationSummary[]>([]);
 const currentConversation = ref<Conversation | null>(null);
@@ -8,6 +9,7 @@ const modelStatus = ref<string>("UNSET");
 const availableModels = ref<Record<string,string>>({});
 const downloadedModels = ref<string[]>([]);
 const defaultModel = ref<string>("");
+const { setConfig } = useSettings();
 
 export function useConversations() {
 
@@ -63,6 +65,7 @@ export function useConversations() {
       // Load the new conversation after creation
       await loadConversation(convId);
       await loadConversations();
+      await setConfig("lastConversationId", convId);
     } catch (error) {
       console.error("Error starting conversation:", error);
       throw error;

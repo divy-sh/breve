@@ -1,6 +1,7 @@
 use rusqlite::Result;
 
-use crate::{config::config_handler::Config, dao::settings_dao::SettingsDao};
+use crate::infrastructure::config::Config;
+use crate::settings::repository::SettingsDao;
 
 pub struct SettingsController {
     pub dao: SettingsDao,
