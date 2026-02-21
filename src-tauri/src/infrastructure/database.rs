@@ -8,12 +8,14 @@ pub struct Database {
 impl Database {
     pub fn new(db_path: &str) -> Self {
         let conn = Connection::open(db_path).expect("Failed to connect to database");
+        _ = init_conversation_dao(&conn);
+        _ = init_settings_dao(&conn);
 
         Database { conn }
     }
 }
 
-pub fn init_conversation_dao(conn: Connection) -> Result<()> {
+pub fn init_conversation_dao(conn: &Connection) -> Result<()> {
     conn.execute(
         "CREATE TABLE IF NOT EXISTS conversations (
             id TEXT PRIMARY KEY,
@@ -26,7 +28,7 @@ pub fn init_conversation_dao(conn: Connection) -> Result<()> {
     Ok(())
 }
 
-pub fn init_settings_dao(conn: Connection) -> Result<()> {
+pub fn init_settings_dao(conn: &Connection) -> Result<()> {
     conn.execute(
         "CREATE TABLE IF NOT EXISTS settings (
             key TEXT PRIMARY KEY,

@@ -1,5 +1,5 @@
 use std::{
-    collections::{BTreeMap, HashMap},
+    collections::HashMap,
     sync::Mutex,
 };
 
@@ -9,8 +9,7 @@ use crate::{
     inference,
     infrastructure::{app::App, path_resolver},
     models::{
-        self,
-        service::{SET, UNSET},
+        self, models::Model, service::{SET, UNSET}
     },
     settings,
 };
@@ -18,7 +17,7 @@ use crate::{
 #[tauri::command]
 pub fn get_available_models(
     app_state: State<'_, Mutex<App>>,
-) -> BTreeMap<String, HashMap<String, String>> {
+) -> &'static HashMap<String, Model> {
     let app = &mut app_state.lock().unwrap();
     app.config.get_available_models()
 }
@@ -26,13 +25,13 @@ pub fn get_available_models(
 #[tauri::command]
 pub fn get_default_model(app_state: State<'_, Mutex<App>>) -> String {
     let app = &mut app_state.lock().unwrap();
-    app.config.model_name.clone()
+    app.config.default_model.clone()
 }
 
 #[tauri::command]
 pub fn get_model_status(app_state: State<'_, Mutex<App>>) -> String {
     let app = &mut app_state.lock().unwrap();
-    let name = &app.config.model_name;
+    let name = &app.config.default_model;
     if name.is_empty() {
         return UNSET.into();
     }
@@ -53,7 +52,7 @@ pub fn list_downloaded_models(app_state: State<'_, Mutex<App>>) -> Vec<String> {
     for (name, _) in cfg.get_available_models() {
         let p = path_resolver::paths().app_local_data(&name).unwrap();
         if p.exists() {
-            found.push(name);
+            found.push(name.to_string());
         }
     }
     found
@@ -71,8 +70,7 @@ pub async fn download_model(
         .get_available_models()
         .get(&model_name)
         .ok_or("Model not found")?
-        .get("repo")
-        .ok_or("Repo URL not found")?
+        .repo
         .clone();
     let path = path_resolver::paths()
         .app_local_data(&model_name)
@@ -106,8 +104,8 @@ pub fn delete_model(model_name: String, app_state: State<'_, Mutex<App>>) -> Res
             .map_err(|e| format!("Delete failed: {}", e))?;
     }
 
-    if config.model_name == model_name {
-        config.model_name.clear();
+    if config.default_model == model_name {
+        config.default_model.clear();
         app.inference = None;
 
         settings::service::set_config("model_name".into(), "".into(), app)

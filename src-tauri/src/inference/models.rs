@@ -7,21 +7,21 @@ use llama_cpp_2::model::params::LlamaModelParams;
 use llama_cpp_2::model::{AddBos, Special};
 use llama_cpp_2::sampling::LlamaSampler;
 use llama_cpp_2::token::LlamaToken;
-use std::collections::HashMap;
 use std::num::NonZero;
 use std::sync::Arc;
 use tauri::{Emitter, Window};
 
 use crate::conversation::models::Conversation;
-use crate::infrastructure::config::Config;
+use crate::models::models::Model;
+use crate::settings::models::Config;
 
 pub struct Inference {
     model: Arc<LlamaModel>,
     pub ctx: LlamaContext<'static>,
-    pub batch_size: i32,
-    pub max_context_length: i32,
-    pub max_output_length: i32,
-    pub model_attrs: HashMap<String, String>,
+    pub batch_size: u64,
+    pub max_context_length: u64,
+    pub max_output_length: u64,
+    pub model_attrs: Model,
     pub system_prompt: String,
 }
 
@@ -57,9 +57,9 @@ impl Inference {
             max_output_length: config.max_output_length,
             model_attrs: config
                 .get_available_models()
-                .get(&config.model_name)
+                .get(&config.default_model)
                 .cloned()
-                .unwrap_or_default(),
+                .unwrap(),
             system_prompt: config.system_prompt.clone(),
         })
     }
@@ -81,8 +81,8 @@ impl Inference {
             .decode(&mut batch)
             .map_err(|e| format!("Decode failed: {:?}", e))?;
 
-        let mut n_cur = batch.n_tokens();
-        let cur = batch.n_tokens() as i32;
+        let mut n_cur: u64 = batch.n_tokens() as u64;
+        let cur: u64 = batch.n_tokens() as u64;
         let mut decoder = encoding_rs::UTF_8.new_decoder();
         let mut sampler = LlamaSampler::greedy();
         let mut message = String::new();
@@ -101,7 +101,7 @@ impl Inference {
             message += &output_string;
             let _ = window.emit("llm-stream", output_string.clone());
             batch.clear();
-            batch.add(token, n_cur, &[0], true).unwrap();
+            batch.add(token, n_cur as i32, &[0], true).unwrap();
             n_cur += 1;
 
             if let Err(_) = self.ctx.decode(&mut batch) {
@@ -116,12 +116,12 @@ impl Inference {
         conv: &Conversation,
         model: &LlamaModel,
     ) -> Result<Vec<LlamaToken>, String> {
-        let prefix = self.get_attr("prefix");
-        let suffix = self.get_attr("suffix");
-        let eot = self.get_attr("eot");
-        let sys_role = self.get_attr("sys");
-        let user_role = self.get_attr("us");
-        let ast_role = self.get_attr("ast");
+        let prefix = &self.model_attrs.prefix;
+        let suffix = &self.model_attrs.suffix;
+        let eot = &self.model_attrs.eot;
+        let sys_role = &self.model_attrs.sys;
+        let user_role = &self.model_attrs.us;
+        let ast_role = &self.model_attrs.ast;
 
         let mut full_prompt = format!(
             "{}{}{}{}{}",
@@ -155,10 +155,6 @@ impl Inference {
         model
             .str_to_token(&full_prompt, AddBos::Always)
             .map_err(|e| format!("{:?}", e))
-    }
-
-    fn get_attr(&self, key: &str) -> &str {
-        self.model_attrs.get(key).map(|s| s.as_str()).unwrap_or("")
     }
 }
 

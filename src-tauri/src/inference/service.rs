@@ -1,6 +1,7 @@
 use crate::{
     inference::models::Inference,
-    infrastructure::{app::App, config::Config, path_resolver},
+    infrastructure::{app::App, path_resolver},
+    settings::models::Config,
     settings,
 };
 
@@ -24,7 +25,7 @@ pub fn activate_model(model_name: String, app: &mut App) -> Result<(), String> {
     settings::service::set_config("model_name".into(), model_name.clone(), app)
         .map_err(|e| e.to_string())?;
 
-    app.config.model_name = model_name.clone();
+    app.config.default_model = model_name.clone();
 
     initialize_inference(app);
 

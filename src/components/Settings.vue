@@ -1,18 +1,13 @@
 <script setup lang="ts">
-    import {
-        kPopup,
-        Navbar,
-        Page,
-        Link,
-    } from 'konsta/vue';
-import ModelsDownload from './ModelsDownload.vue';
+  import { kPopup, Navbar, Page, Link } from 'konsta/vue';
+  import ModelsDownload from './ModelsDownload.vue';
+  import InferenceSettings from './InferenceSettings.vue';
 
-    const { openSettings } = defineProps<{ openSettings: boolean }>();
+  const { openSettings } = defineProps<{ openSettings: boolean }>();
 
-    const emit = defineEmits<{
-        (e: 'close'): void;
-    }>();
-
+  const emit = defineEmits<{
+      (e: 'close'): void;
+  }>();
 </script>
 
 <template>
@@ -27,6 +22,7 @@ import ModelsDownload from './ModelsDownload.vue';
         </Navbar>
 
         <ModelsDownload/>
+        <InferenceSettings/>
       </Page>
 
     </k-popup>

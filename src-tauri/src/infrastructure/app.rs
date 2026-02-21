@@ -1,6 +1,7 @@
 use crate::{
     inference::models::Inference,
-    infrastructure::{config::Config, database::Database},
+    infrastructure::{consts, database::Database},
+    settings::models::Config,
 };
 
 pub struct App {
@@ -11,8 +12,8 @@ pub struct App {
 
 impl App {
     pub fn init() -> Result<App, String> {
-        let config = Config::init().map_err(|e| e.to_string())?;
-        let db_path = config.get_db_path();
+        let config = Config::init();
+        let db_path = consts::get_db_path();
         let db = Database::new(&db_path);
 
         Ok(App {
