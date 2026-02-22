@@ -4,19 +4,19 @@ use crate::{
     settings::models::Config,
 };
 
-pub struct App {
+pub struct Context {
     pub config: Config,
     pub db: Database,
     pub inference: Option<Inference>,
 }
 
-impl App {
-    pub fn init() -> Result<App, String> {
+impl Context {
+    pub fn init() -> Result<Context, String> {
         let config = Config::init();
         let db_path = consts::get_db_path();
         let db = Database::new(&db_path);
 
-        Ok(App {
+        Ok(Context {
             config,
             db,
             inference: None,

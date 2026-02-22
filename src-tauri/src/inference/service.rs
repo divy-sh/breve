@@ -1,6 +1,6 @@
 use crate::{
     inference::models::Inference,
-    infrastructure::{app::App, path_resolver},
+    infrastructure::{context::Context, path_resolver},
     settings::models::Config,
     settings,
 };
@@ -19,23 +19,23 @@ fn validate_model(config: &Config, model_name: &str) -> Result<(), String> {
     Ok(())
 }
 
-pub fn activate_model(model_name: String, app: &mut App) -> Result<(), String> {
-    validate_model(&app.config, &model_name)?;
+pub fn activate_model(model_name: String, ctx: &mut Context) -> Result<(), String> {
+    validate_model(&ctx.config, &model_name)?;
     // persist
-    settings::service::set_config("model_name".into(), model_name.clone(), app)
+    settings::service::set_config("model_name".into(), model_name.clone(), ctx)
         .map_err(|e| e.to_string())?;
 
-    app.config.default_model = model_name.clone();
+    ctx.config.default_model = model_name.clone();
 
-    initialize_inference(app);
+    initialize_inference(ctx);
 
     Ok(())
 }
 
-fn initialize_inference(app: &mut App) {
-    match Inference::init(&app.config) {
+fn initialize_inference(ctx: &mut Context) {
+    match Inference::init(&ctx.config) {
         Ok(inference) => {
-            app.inference = Some(inference);
+            ctx.inference = Some(inference);
         }
         Err(e) => eprintln!("Inference init failed: {}", e),
     }

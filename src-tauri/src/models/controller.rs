@@ -1,13 +1,13 @@
 use std::{
     collections::HashMap,
-    sync::Mutex,
+    sync::{Arc, Mutex},
 };
 
 use tauri::{State, Window};
 
 use crate::{
     inference,
-    infrastructure::{app::App, path_resolver},
+    infrastructure::{context::Context, path_resolver},
     models::{
         self, models::Model, service::{SET, UNSET}
     },
@@ -16,22 +16,22 @@ use crate::{
 
 #[tauri::command]
 pub fn get_available_models(
-    app_state: State<'_, Mutex<App>>,
+    app_state: State<'_, Arc<Mutex<Context>>>,
 ) -> &'static HashMap<String, Model> {
-    let app = &mut app_state.lock().unwrap();
-    app.config.get_available_models()
+    let ctx = &mut app_state.lock().unwrap();
+    ctx.config.get_available_models()
 }
 
 #[tauri::command]
-pub fn get_default_model(app_state: State<'_, Mutex<App>>) -> String {
-    let app = &mut app_state.lock().unwrap();
-    app.config.default_model.clone()
+pub fn get_default_model(app_state: State<'_, Arc<Mutex<Context>>>) -> String {
+    let ctx = &mut app_state.lock().unwrap();
+    ctx.config.default_model.clone()
 }
 
 #[tauri::command]
-pub fn get_model_status(app_state: State<'_, Mutex<App>>) -> String {
-    let app = &mut app_state.lock().unwrap();
-    let name = &app.config.default_model;
+pub fn get_model_status(app_state: State<'_, Arc<Mutex<Context>>>) -> String {
+    let ctx = &mut app_state.lock().unwrap();
+    let name = &ctx.config.default_model;
     if name.is_empty() {
         return UNSET.into();
     }
@@ -45,9 +45,9 @@ pub fn get_model_status(app_state: State<'_, Mutex<App>>) -> String {
 }
 
 #[tauri::command]
-pub fn list_downloaded_models(app_state: State<'_, Mutex<App>>) -> Vec<String> {
-    let app = &mut app_state.lock().unwrap();
-    let cfg = &app.config;
+pub fn list_downloaded_models(app_state: State<'_, Arc<Mutex<Context>>>) -> Vec<String> {
+    let ctx = &mut app_state.lock().unwrap();
+    let cfg = &ctx.config;
     let mut found = vec![];
     for (name, _) in cfg.get_available_models() {
         let p = path_resolver::paths().app_local_data(&name).unwrap();
@@ -62,21 +62,25 @@ pub fn list_downloaded_models(app_state: State<'_, Mutex<App>>) -> Vec<String> {
 pub async fn download_model(
     model_name: String,
     window: Window,
-    app_state: State<'_, Mutex<App>>,
+    app_state: State<'_, Arc<Mutex<Context>>>,
 ) -> Result<(), String> {
-    let app = &mut app_state.lock().unwrap();
-    let cfg = &app.config;
-    let url = cfg
+    let url;
+    let path;
+    {
+        let ctx = &mut app_state.lock().unwrap();
+        let cfg = &ctx.config;
+        url = cfg
         .get_available_models()
         .get(&model_name)
         .ok_or("Model not found")?
         .repo
         .clone();
-    let path = path_resolver::paths()
+        path = path_resolver::paths()
         .app_local_data(&model_name)
         .unwrap()
         .to_string_lossy()
         .to_string();
+    }
 
     let (tx, rx) = std::sync::mpsc::channel();
 
@@ -93,9 +97,9 @@ pub async fn download_model(
 }
 
 #[tauri::command]
-pub fn delete_model(model_name: String, app_state: State<'_, Mutex<App>>) -> Result<(), String> {
-    let app = &mut app_state.lock().unwrap();
-    let config = &mut app.config;
+pub fn delete_model(model_name: String, app_state: State<'_, Arc<Mutex<Context>>>) -> Result<(), String> {
+    let ctx = &mut app_state.lock().unwrap();
+    let config = &mut ctx.config;
     let path = path_resolver::paths().app_local_data(&model_name).unwrap();
 
     if path.exists() {
@@ -106,9 +110,9 @@ pub fn delete_model(model_name: String, app_state: State<'_, Mutex<App>>) -> Res
 
     if config.default_model == model_name {
         config.default_model.clear();
-        app.inference = None;
+        ctx.inference = None;
 
-        settings::service::set_config("model_name".into(), "".into(), app)
+        settings::service::set_config("model_name".into(), "".into(), ctx)
             .map_err(|e| e.to_string())?;
     }
 
@@ -118,8 +122,13 @@ pub fn delete_model(model_name: String, app_state: State<'_, Mutex<App>>) -> Res
 #[tauri::command]
 pub fn set_default_model(
     model_name: String,
-    app_state: State<'_, Mutex<App>>,
+    app_state: State<'_, Arc<Mutex<Context>>>,
 ) -> Result<(), String> {
-    let app = &mut app_state.lock().unwrap();
-    inference::service::activate_model(model_name, app)
+
+    let ctx_clone = Arc::clone(&app_state);
+    std::thread::spawn(move || {
+        let mut ctx = ctx_clone.lock().unwrap();
+        inference::service::activate_model(model_name, &mut ctx)
+    });
+    Ok(())
 }

@@ -1,4 +1,4 @@
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 
 pub mod conversation;
 pub mod inference;
@@ -8,7 +8,7 @@ pub mod settings;
 
 use tauri::Manager;
 
-use crate::infrastructure::app::App;
+use crate::infrastructure::context::Context;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -18,17 +18,19 @@ pub fn run() {
         .setup(|app| {
             infrastructure::path_resolver::init_app_paths(app.handle().clone());
 
-            let mut app_inner = App::init()?;
+            let mut ctx = Context::init()?;
 
             let saved_model =
-                settings::service::get_config("model_name".to_string(), &mut app_inner)
+                settings::service::get_config("model_name".to_string(), &mut ctx)
                     .unwrap_or_default();
 
             if !saved_model.is_empty() {
-                let _ = inference::service::activate_model(saved_model, &mut app_inner);
+                let _ = inference::service::activate_model(saved_model, &mut ctx);
             }
 
-            app.manage(Mutex::new(app_inner));
+            let shared_ctx = Arc::new(Mutex::new(ctx));
+
+            app.manage(shared_ctx);
 
             Ok(())
         })
