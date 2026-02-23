@@ -9,18 +9,18 @@ use rusqlite::Result;
 use tauri::Window;
 use uuid::Uuid;
 
-pub fn get_conversation_ids(ctx: &mut Context) -> Vec<String> {
-    if let Ok(conversation_ids) = dao::get_conversation_ids(&ctx.db.conn) {
+pub fn get_conversation_ids() -> Vec<String> {
+    if let Ok(conversation_ids) = dao::get_conversation_ids() {
         return conversation_ids;
     } else {
         return vec![];
     }
 }
 
-pub fn start_new_conversation(title: &str, ctx: &mut Context) -> Result<String> {
+pub fn start_new_conversation(title: &str) -> Result<String> {
     let id = Uuid::new_v4().to_string();
     let conversation = Conversation::new(id.clone(), title.to_string());
-    dao::add_conversation(&conversation, &ctx.db.conn)?;
+    dao::add_conversation(&conversation)?;
     Ok(id)
 }
 
@@ -30,7 +30,7 @@ pub fn continue_conversation(
     window: Window,
     ctx: &mut Context,
 ) -> Result<Option<String>> {
-    if let Some(mut conversation) = dao::get_conversation(conv_id, &ctx.db.conn)? {
+    if let Some(mut conversation) = dao::get_conversation(conv_id)? {
         conversation.add_message("user", user_input);
 
         // Ensure inference is available
@@ -42,7 +42,7 @@ pub fn continue_conversation(
         match inference.generate_text(&conversation, window) {
             Ok(ai_reply) => {
                 conversation.add_message("assistant", &ai_reply);
-                dao::update_conversation(&conversation, &ctx.db.conn)?;
+                dao::update_conversation(&conversation)?;
                 Ok(Some(ai_reply))
             }
             Err(e) => {
@@ -55,10 +55,10 @@ pub fn continue_conversation(
     }
 }
 
-pub fn get_conversation(id: &str, ctx: &mut Context) -> Result<Option<Conversation>> {
-    dao::get_conversation(id, &ctx.db.conn)
+pub fn get_conversation(id: &str) -> Result<Option<Conversation>> {
+    dao::get_conversation(id)
 }
 
-pub fn delete_conversation(id: &str, ctx: &mut Context) -> Result<String, Error> {
-    dao::delete_conversation(id, &ctx.db.conn)
+pub fn delete_conversation(id: &str) -> Result<String, Error> {
+    dao::delete_conversation(id)
 }

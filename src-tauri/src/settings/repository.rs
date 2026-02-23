@@ -1,6 +1,9 @@
-use rusqlite::{Connection, Result};
+use rusqlite::Result;
 
-pub fn get_config(name: String, conn: &Connection) -> Result<Option<String>> {
+use crate::infrastructure::database::Database;
+
+pub fn get_config(name: String) -> Result<Option<String>> {
+    let conn = Database::get_db().get_conn();
     let mut stmt = conn.prepare("SELECT value FROM settings WHERE key = ?1")?;
     let mut rows = stmt.query(rusqlite::params![name])?;
 
@@ -12,7 +15,8 @@ pub fn get_config(name: String, conn: &Connection) -> Result<Option<String>> {
     }
 }
 
-pub fn set_config(name: String, value: String, conn: &Connection) -> Result<()> {
+pub fn set_config(name: String, value: String) -> Result<()> {
+    let conn = Database::get_db().get_conn();
     conn.execute(
         "INSERT INTO settings (key, value) VALUES (?1, ?2)
             ON CONFLICT(key) DO UPDATE SET value = excluded.value",

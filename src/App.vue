@@ -28,6 +28,9 @@ const {
 
 const theme = ref<'material' | 'ios'>('material');
 const isDark = ref(false);
+
+// TODO: refactor to also use conversation id so that streaming content 
+// is properly associated with the conversation when switching between them while streaming
 const currentStreamingContent = ref("");
 const isLoading = ref(false);
 const sidebarOpen = ref(false);

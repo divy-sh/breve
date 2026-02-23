@@ -1,11 +1,11 @@
 use std::fmt::Error;
 
-use crate::conversation::models::{Conversation, Message};
+use crate::{conversation::models::{Conversation, Message}, infrastructure::database::Database};
 
-use rusqlite::{Connection, Result, params};
-use serde_json;
+use rusqlite::{Result, params};
 
-pub fn add_conversation(conv: &Conversation, conn: &Connection) -> Result<()> {
+pub fn add_conversation(conv: &Conversation) -> Result<()> {
+    let conn = Database::get_db().get_conn();
     let body_json = serde_json::to_string(&conv.body)
         .map_err(|e| rusqlite::Error::ToSqlConversionFailure(Box::new(e)))?;
     conn.execute(
@@ -15,7 +15,8 @@ pub fn add_conversation(conv: &Conversation, conn: &Connection) -> Result<()> {
     Ok(())
 }
 
-pub fn update_conversation(conv: &Conversation, conn: &Connection) -> Result<()> {
+pub fn update_conversation(conv: &Conversation) -> Result<()> {
+    let conn = Database::get_db().get_conn();
     let body_json = serde_json::to_string(&conv.body)
         .map_err(|e| rusqlite::Error::ToSqlConversionFailure(Box::new(e)))?;
     conn.execute(
@@ -25,7 +26,8 @@ pub fn update_conversation(conv: &Conversation, conn: &Connection) -> Result<()>
     Ok(())
 }
 
-pub fn get_conversation(id: &str, conn: &Connection) -> Result<Option<Conversation>> {
+pub fn get_conversation(id: &str) -> Result<Option<Conversation>> {
+    let conn = Database::get_db().get_conn();
     let mut stmt = conn.prepare("SELECT id, title, body FROM conversations WHERE id = ?1")?;
     let mut rows = stmt.query(params![id])?;
 
@@ -44,7 +46,8 @@ pub fn get_conversation(id: &str, conn: &Connection) -> Result<Option<Conversati
     }
 }
 
-pub fn get_conversation_ids(conn: &Connection) -> Result<Vec<String>> {
+pub fn get_conversation_ids() -> Result<Vec<String>> {
+    let conn = Database::get_db().get_conn();
     let mut stmt =
         conn.prepare("SELECT id, lastUpdated FROM conversations order by lastUpdated DESC")?;
     let ids = stmt
@@ -53,7 +56,8 @@ pub fn get_conversation_ids(conn: &Connection) -> Result<Vec<String>> {
     Ok(ids)
 }
 
-pub fn delete_conversation(id: &str, conn: &Connection) -> Result<String, Error> {
+pub fn delete_conversation(id: &str) -> Result<String, Error> {
+    let conn = Database::get_db().get_conn();
     if let Ok(deleted) = conn.execute("DELETE FROM conversations where id = ?1", params![id]) {
         if deleted <= 0 {
             return Err(Error);

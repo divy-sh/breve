@@ -107,7 +107,7 @@ pub async fn delete_model(model_name: String, app_state: State<'_, Arc<Mutex<Con
         config.default_model.clear();
         ctx.inference = None;
 
-        settings::service::set_config("model_name".into(), "".into(), ctx)
+        settings::service::set_config("model_name".into(), "".into())
             .map_err(|e| e.to_string())?;
     }
 

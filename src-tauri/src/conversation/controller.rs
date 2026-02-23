@@ -10,10 +10,8 @@ use crate::{
 #[tauri::command]
 pub async fn start_conversation(
     title: String,
-    app_state: State<'_, Arc<Mutex<Context>>>,
 ) -> Result<String, String> {
-    let ctx = &mut app_state.lock().await;
-    service::start_new_conversation(&title, ctx).map_err(|e| e.to_string())
+    service::start_new_conversation(&title).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -36,25 +34,20 @@ pub async fn continue_conversation(
 }
 
 #[tauri::command]
-pub async fn get_conversation_ids(app_state: State<'_, Arc<Mutex<Context>>>) -> Result<Vec<String>, String> {
-    let ctx = &mut *app_state.lock().await;
-    Ok(service::get_conversation_ids(ctx))
+pub async fn get_conversation_ids() -> Result<Vec<String>, String> {
+    Ok(service::get_conversation_ids())
 }
 
 #[tauri::command]
 pub async fn get_conversation(
     conv_id: String,
-    app_state: State<'_, Arc<Mutex<Context>>>,
 ) -> Result<Option<Conversation>, String> {
-    let ctx = &mut *app_state.lock().await;
-    service::get_conversation(&conv_id, ctx).map_err(|e| e.to_string())
+    service::get_conversation(&conv_id).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
 pub async fn delete_conversation(
     conv_id: String,
-    app_state: State<'_, Arc<Mutex<Context>>>,
 ) -> Result<String, String> {
-    let ctx = &mut *app_state.lock().await;
-    service::delete_conversation(&conv_id, ctx).map_err(|e| e.to_string())
+    service::delete_conversation(&conv_id).map_err(|e| e.to_string())
 }
