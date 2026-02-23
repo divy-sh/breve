@@ -1,4 +1,4 @@
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 
 pub mod conversation;
 pub mod inference;
@@ -6,7 +6,7 @@ pub mod infrastructure;
 pub mod models;
 pub mod settings;
 
-use tauri::Manager;
+use tauri::{Manager, async_runtime::Mutex};
 
 use crate::infrastructure::context::Context;
 

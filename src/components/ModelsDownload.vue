@@ -19,6 +19,7 @@ const {
 } = useConversations();
 
 const downloadingModel = ref<string | null>(null);
+const isSettingDefault = ref<string | null>(null);
 const downloadProgress = ref(0);
 const showDeleteConfirm = ref(false);
 const modelToDelete = ref<string | null>(null);
@@ -63,10 +64,13 @@ async function onDownload(name: string) {
 
 async function onSetDefault(name: string) {
   try {
+    isSettingDefault.value = name;
     await setDefaultModel(name);
     await refreshVariables();    
   } catch (err) {
     console.error("Set default failed:", err);
+  } finally {
+    isSettingDefault.value = null;
   }
 }
 
@@ -139,7 +143,8 @@ onUnmounted(() => {
         <!-- buttons to show when the model is downloaded -->
         <template v-if="isDownloaded(name)">
           <k-button clear inline @click="onSetDefault(name)" :disabled="isDefault(name)" class="w-1/3">
-            <i :class="isDefault(name) ? 'pi pi-check-circle' : 'pi pi-play-circle'"></i>
+            <i v-if="isSettingDefault === name" class="pi pi-spinner pi-spin"></i>
+            <i v-else :class="isDefault(name) ? 'pi pi-check-circle' : 'pi pi-play-circle'"></i>
           </k-button>
           <k-button clear inline @click="confirmDelete(name)" :disabled="isDefault(name)" class="w-1/3">
             <i class="pi pi-trash"></i>

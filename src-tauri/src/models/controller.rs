@@ -1,9 +1,9 @@
 use std::{
     collections::HashMap,
-    sync::{Arc, Mutex},
+    sync::Arc,
 };
 
-use tauri::{State, Window};
+use tauri::{State, Window, async_runtime::Mutex};
 
 use crate::{
     inference,
@@ -15,38 +15,38 @@ use crate::{
 };
 
 #[tauri::command]
-pub fn get_available_models(
+pub async fn get_available_models(
     app_state: State<'_, Arc<Mutex<Context>>>,
-) -> &'static HashMap<String, Model> {
-    let ctx = &mut app_state.lock().unwrap();
-    ctx.config.get_available_models()
+) -> Result<&'static HashMap<String, Model>, String> {
+    let ctx = &mut app_state.lock().await;
+    Ok(ctx.config.get_available_models())
 }
 
 #[tauri::command]
-pub fn get_default_model(app_state: State<'_, Arc<Mutex<Context>>>) -> String {
-    let ctx = &mut app_state.lock().unwrap();
-    ctx.config.default_model.clone()
+pub async fn get_default_model(app_state: State<'_, Arc<Mutex<Context>>>) -> Result<String, String> {
+    let ctx = &mut app_state.lock().await;
+    Ok(ctx.config.default_model.clone())
 }
 
 #[tauri::command]
-pub fn get_model_status(app_state: State<'_, Arc<Mutex<Context>>>) -> String {
-    let ctx = &mut app_state.lock().unwrap();
+pub async fn get_model_status(app_state: State<'_, Arc<Mutex<Context>>>) -> Result<String, String> {
+    let ctx = &mut app_state.lock().await;
     let name = &ctx.config.default_model;
     if name.is_empty() {
-        return UNSET.into();
+        return Ok(UNSET.into());
     }
 
     let path = path_resolver::paths().app_local_data(&name).unwrap();
     if path.exists() {
-        SET.into()
+        Ok(SET.into())
     } else {
-        UNSET.into()
+        Ok(UNSET.into())
     }
 }
 
 #[tauri::command]
-pub fn list_downloaded_models(app_state: State<'_, Arc<Mutex<Context>>>) -> Vec<String> {
-    let ctx = &mut app_state.lock().unwrap();
+pub async fn list_downloaded_models(app_state: State<'_, Arc<Mutex<Context>>>) -> Result<Vec<String>, String> {
+    let ctx = &mut app_state.lock().await;
     let cfg = &ctx.config;
     let mut found = vec![];
     for (name, _) in cfg.get_available_models() {
@@ -55,7 +55,7 @@ pub fn list_downloaded_models(app_state: State<'_, Arc<Mutex<Context>>>) -> Vec<
             found.push(name.to_string());
         }
     }
-    found
+    Ok(found)
 }
 
 #[tauri::command]
@@ -67,7 +67,7 @@ pub async fn download_model(
     let url;
     let path;
     {
-        let ctx = &mut app_state.lock().unwrap();
+        let ctx = &mut app_state.lock().await;
         let cfg = &ctx.config;
         url = cfg
         .get_available_models()
@@ -82,23 +82,18 @@ pub async fn download_model(
         .to_string();
     }
 
-    let (tx, rx) = std::sync::mpsc::channel();
+    let result = tauri::async_runtime::spawn_blocking(move || {
+        models::service::fetch_model(&url, &model_name, &path, window)
+    }).await.map_err(|e| e.to_string())?;
 
-    std::thread::spawn(move || {
-        let result = models::service::fetch_model(&url, &model_name, &path, window);
-        let _ = tx.send(result);
-    });
-
-    rx.recv()
-        .map_err(|e| format!("Download failed: {}", e))?
-        .map_err(|e| format!("Model fetch failed: {:?}", e))?;
+    result.map_err(|e| format!("Model fetch failed: {:?}", e))?;
 
     Ok(())
 }
 
 #[tauri::command]
-pub fn delete_model(model_name: String, app_state: State<'_, Arc<Mutex<Context>>>) -> Result<(), String> {
-    let ctx = &mut app_state.lock().unwrap();
+pub async fn delete_model(model_name: String, app_state: State<'_, Arc<Mutex<Context>>>) -> Result<(), String> {
+    let ctx = &mut app_state.lock().await;
     let config = &mut ctx.config;
     let path = path_resolver::paths().app_local_data(&model_name).unwrap();
 
@@ -120,15 +115,12 @@ pub fn delete_model(model_name: String, app_state: State<'_, Arc<Mutex<Context>>
 }
 
 #[tauri::command]
-pub fn set_default_model(
+pub async fn set_default_model(
     model_name: String,
     app_state: State<'_, Arc<Mutex<Context>>>,
 ) -> Result<(), String> {
-
-    let ctx_clone = Arc::clone(&app_state);
-    std::thread::spawn(move || {
-        let mut ctx = ctx_clone.lock().unwrap();
-        inference::service::activate_model(model_name, &mut ctx)
-    });
-    Ok(())
+    let mut ctx = app_state.lock().await;
+    
+    inference::service::activate_model(model_name, &mut ctx)
+        .map_err(|e| e.to_string())
 }
