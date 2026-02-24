@@ -1,14 +1,14 @@
 <script setup lang="ts">
   import { computed, ref, onMounted, watch, nextTick } from 'vue';
   import { kMessages, kMessage, kMessagesTitle } from 'konsta/vue';
-  import type { Conversation } from '../types';
+  import type { Conversation, StreamPayload } from '../types';
   import markdownit from 'markdown-it';
 
   const md = markdownit({ html: true, linkify: true, typographer: true });
 
   const props = defineProps<{
     conversation: Conversation | null;
-    streamingContent: string;
+    streamingContent: StreamPayload;
     isLoading: boolean;
   }>();
 
@@ -17,8 +17,8 @@
   const messages = computed(() => {
     if (!props.conversation?.body) return [];
     const allMessages = [...props.conversation.body];
-    if (props.streamingContent && props.isLoading) {
-      allMessages.push({ role: 'assistant', content: props.streamingContent });
+    if (props.streamingContent && props.isLoading && props.streamingContent.id == props.conversation.id) {
+      allMessages.push({ role: 'assistant', content: props.streamingContent.content });
     }
     return allMessages;
   });

@@ -8,6 +8,7 @@ import ChatContainer from "./components/ChatContainer.vue";
 import { useConversations } from "./composables/useConversations";
 import { useSettings } from './composables/useSettings';
 import ModelsDownload from './components/ModelsDownload.vue';
+import type { StreamPayload } from './types';
 
 const {
   conversations, 
@@ -29,9 +30,7 @@ const {
 const theme = ref<'material' | 'ios'>('material');
 const isDark = ref(false);
 
-// TODO: refactor to also use conversation id so that streaming content 
-// is properly associated with the conversation when switching between them while streaming
-const currentStreamingContent = ref("");
+const streamingContent = ref<StreamPayload>({ id: '', content: '' });
 const isLoading = ref(false);
 const sidebarOpen = ref(false);
 
@@ -43,8 +42,11 @@ onMounted(async () => {
     setDark(value === 'true');
   });
 
-  unlisten = await listen("llm-stream", (event) => {
-    currentStreamingContent.value += event.payload as string;
+  unlisten = await listen<{id: string, content: string}>("llm-stream", (event) => {
+    streamingContent.value = {
+      id: event.payload.id,
+      content: streamingContent.value.content + event.payload.content
+    };
   });
 
   loadConversations().catch(console.error);
@@ -80,7 +82,10 @@ async function handleSendMessage(message: string) {
   if (!message.trim()) return;
 
   isLoading.value = true;
-  currentStreamingContent.value = "";
+  streamingContent.value = {
+    id: '',
+    content: '',
+  }
 
   try {
     if (currentConversation.value) {
@@ -97,7 +102,7 @@ async function handleSendMessage(message: string) {
 }
 
 provide('isLoading', isLoading);
-provide('currentStreamingContent', currentStreamingContent);
+provide('currentStreamingContent', streamingContent);
 provide('handleSendMessage', handleSendMessage);
 provide('AppTheme', {
   theme,
@@ -124,7 +129,7 @@ provide('AppTheme', {
     <ChatContainer v-if="modelStatus === 'SET'"
       :conversation="currentConversation"
       :isLoading="isLoading"
-      :streamingContent="currentStreamingContent"
+      :streamingContent="streamingContent"
       :is-dark="isDark"
       @toggle-theme="setDark(!isDark)"
       @toggle-sidebar="toggleSidebar"

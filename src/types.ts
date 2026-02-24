@@ -13,3 +13,8 @@ export interface ConversationSummary {
   id: string;
   title: string;
 }
+
+export interface StreamPayload {
+  id: string;
+  content: string;
+}

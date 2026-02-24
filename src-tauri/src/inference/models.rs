@@ -15,6 +15,12 @@ use crate::conversation::models::Conversation;
 use crate::models::models::Model;
 use crate::settings::models::Config;
 
+#[derive(Debug, Clone, serde::Serialize)]
+pub struct StreamingContent {
+    pub id: String,
+    pub content: String,
+}
+
 pub struct Inference {
     model: Arc<LlamaModel>,
     pub ctx: LlamaContext<'static>,
@@ -99,7 +105,10 @@ impl Inference {
             _ = decoder.decode_to_string(&output_bytes, &mut output_string, false);
 
             message += &output_string;
-            let _ = window.emit("llm-stream", output_string.clone());
+            let _ = window.emit("llm-stream", StreamingContent {
+                id: conv.id.clone(),
+                content: output_string.clone(),
+            });
             batch.clear();
             batch.add(token, n_cur as i32, &[0], true).unwrap();
             n_cur += 1;

@@ -12,12 +12,13 @@
   import type { Conversation } from '../types';
   import { ref } from 'vue';
   import Settings from './Settings.vue';
+  import type { StreamPayload } from '../types';
 
   // Props
   defineProps<{
     conversation: Conversation | null;
     isLoading: boolean;
-    streamingContent: string;
+    streamingContent: StreamPayload;
     isDark: boolean;
   }>();
 
