@@ -21,8 +21,7 @@ pub fn run() {
             let mut ctx = Context::init()?;
 
             let saved_model =
-                settings::service::get_config("model_name".to_string())
-                    .unwrap_or_default();
+                settings::service::get_config("model_name".to_string()).unwrap_or_default();
 
             if !saved_model.is_empty() {
                 let _ = inference::service::activate_model(saved_model, &mut ctx);

@@ -23,7 +23,7 @@ impl Database {
 
             _ = db.init_conversation_dao();
             _ = db.init_settings_dao();
-            
+
             db
         })
     }

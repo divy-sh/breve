@@ -105,10 +105,13 @@ impl Inference {
             _ = decoder.decode_to_string(&output_bytes, &mut output_string, false);
 
             message += &output_string;
-            let _ = window.emit("llm-stream", StreamingContent {
-                id: conv.id.clone(),
-                content: output_string.clone(),
-            });
+            let _ = window.emit(
+                "llm-stream",
+                StreamingContent {
+                    id: conv.id.clone(),
+                    content: output_string.clone(),
+                },
+            );
             batch.clear();
             batch.add(token, n_cur as i32, &[0], true).unwrap();
             n_cur += 1;
