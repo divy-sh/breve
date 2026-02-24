@@ -471,9 +471,9 @@ dependencies = [
 
 [[package]]
 name = "cc"
-version = "1.2.36"
+version = "1.2.56"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5252b3d2648e5eedbc1a6f501e3c795e07025c1e93bbf8bbdd6eef7f447a6d54"
+checksum = "aebf35691d1bfb0ac386a69bac2fde4dd276fb618cf8bf4f5318fe285e821bb2"
 dependencies = [
  "find-msvc-tools",
  "jobserver",
@@ -1074,9 +1074,9 @@ dependencies = [
 
 [[package]]
 name = "find-msvc-tools"
-version = "0.1.1"
+version = "0.1.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7fd99930f64d146689264c637b5af2f0233a933bef0d8570e2526bf9e083192d"
+checksum = "5baebc0774151f905a1a2cc41989300b1e6fbb29aff0ceffa1064fdd3088d582"
 
 [[package]]
 name = "find_cuda_helper"
@@ -2228,22 +2228,23 @@ checksum = "23fb14cb19457329c82206317a5663005a4d404783dc74f4252769b0d5f42856"
 
 [[package]]
 name = "llama-cpp-2"
-version = "0.1.121"
+version = "0.1.136"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fd4349398c631eef9824111bf523f0d2c500f8d786e109d7d5c6c673451b35a1"
+checksum = "a6347a802381f3953cd871d42572463a11b888ca2878065390d12f3339025e88"
 dependencies = [
+ "encoding_rs",
  "enumflags2",
  "llama-cpp-sys-2",
- "thiserror 1.0.69",
+ "thiserror 2.0.12",
  "tracing",
  "tracing-core",
 ]
 
 [[package]]
 name = "llama-cpp-sys-2"
-version = "0.1.121"
+version = "0.1.136"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "29963419ccdedd54934ded0ddd9ba63c2056ad8d0b152f313f85d3cf481c1b49"
+checksum = "c8536707545e27a8a889cb089fd5064a3a22fe0b7b9a71b23bf91e84b1a7a90d"
 dependencies = [
  "bindgen",
  "cc",

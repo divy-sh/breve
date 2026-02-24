@@ -4,7 +4,7 @@ use llama_cpp_2::llama_backend::LlamaBackend;
 use llama_cpp_2::llama_batch::LlamaBatch;
 use llama_cpp_2::model::LlamaModel;
 use llama_cpp_2::model::params::LlamaModelParams;
-use llama_cpp_2::model::{AddBos, Special};
+use llama_cpp_2::model::AddBos;
 use llama_cpp_2::sampling::LlamaSampler;
 use llama_cpp_2::token::LlamaToken;
 use std::num::NonZero;
@@ -89,7 +89,7 @@ impl Inference {
 
         let mut n_cur: u64 = batch.n_tokens() as u64;
         let cur: u64 = batch.n_tokens() as u64;
-        let mut decoder = encoding_rs::UTF_8.new_decoder();
+        let decoder: &mut encoding_rs::Decoder = &mut encoding_rs::UTF_8.new_decoder();
         let mut sampler = LlamaSampler::greedy();
         let mut message = String::new();
 
@@ -100,9 +100,7 @@ impl Inference {
                 break;
             }
 
-            let output_bytes = model.token_to_bytes(token, Special::Tokenize).unwrap();
-            let mut output_string = String::with_capacity(32);
-            _ = decoder.decode_to_string(&output_bytes, &mut output_string, false);
+            let output_string = model.token_to_piece(token, decoder, true, None).unwrap();
 
             message += &output_string;
             let _ = window.emit(
