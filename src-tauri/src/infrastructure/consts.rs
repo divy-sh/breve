@@ -22,7 +22,7 @@ pub fn default_models() -> &'static HashMap<String, Model> {
                 Model {
                     name: "Gemma-3-1B-It".to_string(),
                     repo: "unsloth/gemma-3-1b-it-GGUF".to_string(),
-                    size: 1024 * 1024 * 1024,
+                    size: 806.0,
                     prefix: "<start_of_turn>".to_string(),
                     suffix: "\n".to_string(),
                     eot: "<end_of_turn>\n".to_string(),
@@ -38,7 +38,7 @@ pub fn default_models() -> &'static HashMap<String, Model> {
                 Model {
                     name: "Llama-3.2-1B-Instruct".to_string(),
                     repo: "bartowski/Llama-3.2-1B-Instruct-GGUF".to_string(),
-                    size: 1024 * 1024 * 1024,
+                    size: 808.0,
                     prefix: "<|start_header_id|>".to_string(),
                     suffix: "<|end_header_id|>\n".to_string(),
                     eot: "<|eot_id|>".to_string(),
@@ -54,7 +54,7 @@ pub fn default_models() -> &'static HashMap<String, Model> {
                 Model {
                     name: "SmolLM2-360M-Instruct".to_string(),
                     repo: "QuantFactory/SmolLM2-360M-Instruct-GGUF".to_string(),
-                    size: 1024 * 1024 * 1024,
+                    size: 271.0,
                     prefix: "<start_of_turn>".to_string(),
                     suffix: "\n".to_string(),
                     eot: "<end_of_turn>\n".to_string(),
@@ -63,6 +63,22 @@ pub fn default_models() -> &'static HashMap<String, Model> {
                     ast: "assistant".to_string(),
                     supports_vision: false,
                     params: "360M".to_string(),
+                },
+            ),
+            (
+                "SmolLM3-Q4_K_M.gguf".to_string(),
+                Model {
+                    name: "SmolLM3-3B".to_string(),
+                    repo: "ggml-org/SmolLM3-3B-GGUF".to_string(),
+                    size: 1.92 * 1024.0,
+                    prefix: "<|start_header_id|>".to_string(),
+                    suffix: "<|end_header_id|>\n".to_string(),
+                    eot: "<|eot_id|>".to_string(),
+                    sys: "system".to_string(),
+                    us: "user".to_string(),
+                    ast: "assistant".to_string(),
+                    supports_vision: false,
+                    params: "3B".to_string(),
                 },
             ),
         ])

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted, computed } from 'vue';
 import { kChip, kBlockTitle, kButton, Dialog, kProgressbar, kList, kListItem } from 'konsta/vue';
 import { listen } from '@tauri-apps/api/event';
 import { useConversations } from '../composables/useConversations';
@@ -24,7 +24,6 @@ const downloadProgress = ref(0);
 const showDeleteConfirm = ref(false);
 const modelToDelete = ref<string | null>(null);
 
-// ADDED THESE TWO:
 const expandedModels = ref<string[]>([]);
 const toggleExpand = (name: string) => {
   if (expandedModels.value.includes(name)) {
@@ -37,6 +36,29 @@ const toggleExpand = (name: string) => {
 const isDefault = (name: string) => defaultModel.value === name;
 const isDownloaded = (name: string) => downloadedModels.value.includes(name);
 const isDownloading = (name: string) => downloadingModel.value === name;
+
+// NEW: Computed properties for separated and sorted lists
+const downloadedList = computed(() => {
+  return Object.keys(availableModels.value)
+    .filter(name => isDownloaded(name))
+    .sort((a, b) => {
+      const contextA = availableModels.value[a]['size' as any] as any || 0;
+      const contextB = availableModels.value[b]['size' as any] as any || 0;
+      if (contextB !== contextA) return contextA - contextB;
+      return b.localeCompare(a);
+    });
+});
+
+const availableList = computed(() => {
+  return Object.keys(availableModels.value)
+    .filter(name => !isDownloaded(name))
+    .sort((a, b) => {
+      const contextA = availableModels.value[a]['size' as any] as any || 0;
+      const contextB = availableModels.value[b]['size' as any] as any || 0;
+      if (contextB !== contextA) return contextA - contextB;
+      return b.localeCompare(a);
+    });
+});
 
 let unlistenProgress: (() => void) | null = null;
 
@@ -100,70 +122,72 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <k-block-title>Models</k-block-title>
+  <k-block-title v-if="downloadedList.length > 0">Downloaded Models</k-block-title>
   <k-list strong inset dividers>
-    <k-list-item v-for="name in Object.keys(availableModels)">
-      <!-- Title -->
+    <k-list-item v-for="name in downloadedList" :key="name">
       <template #title>
         {{ availableModels[name]['name' as any] }}
       </template>
       
-      <!-- After title -->
       <template #after>
         {{ availableModels[name]['params' as any] }}
       </template>
       
-      <!-- Below title -->
       <template #subtitle>
-        
-        <!-- Download status -->
-        <div v-if="isDownloading(name)" >
+        <div v-if="expandedModels.includes(name)">
+          <k-chip class="m-0.5 max-w-full">
+            <span class="truncate">{{ availableModels[name]['repo' as any] }}</span>
+          </k-chip>
+          <k-chip class="m-0.5 max-w-full">
+            <span class="truncate">Size: {{ availableModels[name]['size' as any] }} MB</span>
+          </k-chip>
+        </div>
+        <k-button clear inline @click="onSetDefault(name)" :disabled="isDefault(name)" class="w-1/3">
+          <i v-if="isSettingDefault === name" class="pi pi-spinner pi-spin"></i>
+          <i v-else :class="isDefault(name) ? 'pi pi-check-circle' : 'pi pi-play-circle'"> Select</i>
+        </k-button>
+        <k-button clear inline @click="confirmDelete(name)" :disabled="isDefault(name)" class="w-1/3">
+          <i class="pi pi-trash"> Delete</i>
+        </k-button>
+        <k-button clear inline @click="toggleExpand(name)" class="w-1/3">
+          <i :class="expandedModels.includes(name) ? 'pi pi-angle-up' : 'pi pi-angle-down'"> Details</i>
+        </k-button>
+      </template>
+    </k-list-item>
+  </k-list>
+
+  <k-block-title v-if="availableList.length > 0">Available Models</k-block-title>
+  <k-list strong inset dividers>
+    <k-list-item v-for="name in availableList" :key="name">
+      <template #title>
+        {{ availableModels[name]['name' as any] }}
+      </template>
+      <template #after>
+        {{ availableModels[name]['params' as any] }}
+      </template>
+      <template #subtitle>
+        <div v-if="isDownloading(name)">
           <div class="flex justify-between items-center mb-1">
             <span>Downloading</span>
             <span class="text-xs font-mono">{{ Math.round(downloadProgress) }}%</span>
           </div>
           <k-progressbar :progress="downloadProgress / 100" />
         </div>
-        
-        <!-- expanded view -->
         <div v-if="expandedModels.includes(name)">
-          <k-chip class="m-0.5 max-w-full">
-            <span class="truncate">Status: {{ isDownloaded(name) ? 'Downloaded' : 'Available' }}</span>
-          </k-chip>
-
           <k-chip class="m-0.5 max-w-full">
             <span class="truncate">{{ availableModels[name]['repo' as any] }}</span>
           </k-chip>
-
           <k-chip class="m-0.5 max-w-full">
-            <span class="truncate">Size: {{ availableModels[name]['size' as any] }}</span>
+            <span class="truncate">Size: {{ availableModels[name]['size' as any] }} MB</span>
           </k-chip>
         </div>
-        
-        <!-- buttons to show when the model is downloaded -->
-        <template v-if="isDownloaded(name)">
-          <k-button clear inline @click="onSetDefault(name)" :disabled="isDefault(name)" class="w-1/3">
-            <i v-if="isSettingDefault === name" class="pi pi-spinner pi-spin"></i>
-            <i v-else :class="isDefault(name) ? 'pi pi-check-circle' : 'pi pi-play-circle'"></i>
-          </k-button>
-          <k-button clear inline @click="confirmDelete(name)" :disabled="isDefault(name)" class="w-1/3">
-            <i class="pi pi-trash"></i>
-          </k-button>
-        </template>
-        
-        <!-- buttons to show when the model is not downloaded -->
-        <template v-else>
-          <k-button clear inline @click="onDownload(name)" :disabled="downloadingModel !== null" class="w-2/3">
-            <i class="pi pi-download mr-2"> Download</i>
-          </k-button>
-        </template>
-        
-        <!-- expand/collapse button -->
+        <k-button clear inline @click="onDownload(name)" :disabled="downloadingModel !== null" class="w-2/3">
+          <i class="pi pi-download mr-2"> Download</i>
+        </k-button>
         <k-button clear inline @click="toggleExpand(name)" class="w-1/3">
-          <i :class="expandedModels.includes(name) ? 'pi pi-angle-up' : 'pi pi-angle-down'"></i>
+          <i :class="expandedModels.includes(name) ? 'pi pi-angle-up' : 'pi pi-angle-down'"> Details</i>
         </k-button>
       </template>
-
     </k-list-item>
   </k-list>
   

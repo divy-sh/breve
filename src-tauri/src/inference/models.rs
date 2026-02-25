@@ -2,11 +2,9 @@ use llama_cpp_2::context::LlamaContext;
 use llama_cpp_2::context::params::LlamaContextParams;
 use llama_cpp_2::llama_backend::LlamaBackend;
 use llama_cpp_2::llama_batch::LlamaBatch;
-use llama_cpp_2::model::LlamaModel;
+use llama_cpp_2::model::{LlamaChatMessage, LlamaModel};
 use llama_cpp_2::model::params::LlamaModelParams;
-use llama_cpp_2::model::AddBos;
 use llama_cpp_2::sampling::LlamaSampler;
-use llama_cpp_2::token::LlamaToken;
 use std::num::NonZero;
 use std::sync::Arc;
 use tauri::{Emitter, Window};
@@ -46,7 +44,7 @@ impl Inference {
 
         let ctx_params = LlamaContextParams::default()
             .with_n_batch(config.batch_size.try_into().unwrap())
-            .with_n_ctx(Some(NonZero::try_from(config.batch_size as u32).unwrap()));
+            .with_n_ctx(Some(NonZero::try_from(config.max_context_length as u32).unwrap()));
 
         let ctx = unsafe {
             let internal_ctx = model
@@ -76,7 +74,7 @@ impl Inference {
 
         let mut batch = LlamaBatch::new(self.batch_size as usize, 8);
 
-        let tokens_list = self.format_prompt(conv, model)?;
+        let tokens_list = self.format_prompt(conv)?;
         let last_index = tokens_list.len() as i32 - 1;
 
         for (i, token) in (0_i32..).zip(tokens_list.into_iter()) {
@@ -121,50 +119,52 @@ impl Inference {
         Ok(message)
     }
 
-    pub fn format_prompt(
-        &self,
-        conv: &Conversation,
-        model: &LlamaModel,
-    ) -> Result<Vec<LlamaToken>, String> {
-        let prefix = &self.model_attrs.prefix;
-        let suffix = &self.model_attrs.suffix;
-        let eot = &self.model_attrs.eot;
-        let sys_role = &self.model_attrs.sys;
-        let user_role = &self.model_attrs.us;
-        let ast_role = &self.model_attrs.ast;
+    pub fn format_prompt(&self, conv: &Conversation) -> Result<Vec<llama_cpp_2::token::LlamaToken>, String> {
+        let system_msg = LlamaChatMessage::new("system".to_string(), self.system_prompt.clone())
+            .map_err(|e| format!("Invalid system prompt: {:?}", e))?;
 
-        let mut full_prompt = format!(
-            "{}{}{}{}{}",
-            prefix, sys_role, suffix, self.system_prompt, eot
-        );
-        let mut message_segments = Vec::new();
-        let mut current_len = full_prompt.len();
+        // 1. Start with all current messages
+        let mut body_messages: Vec<LlamaChatMessage> = conv.body.iter().map(|msg| {
+            let role = if msg.role == "user" { "user" } else { "assistant" };
+            LlamaChatMessage::new(role.to_string(), msg.content.clone()).unwrap()
+        }).collect();
 
-        for msg in conv.body.iter().rev() {
-            let role = if msg.role == "user" {
-                user_role
+        let template = self.model.chat_template(None)
+            .map_err(|e| format!("Failed to get chat template: {:?}", e))?;
+
+        let mut tokens: Vec<llama_cpp_2::token::LlamaToken>;
+        let reserve_for_output = self.max_output_length as usize;
+        
+        // 2. Sliding Window: Remove oldest messages until the prompt fits
+        // We loop, checking if (System + Body + New Output) <= Context Limit
+        loop {
+            let mut current_chat = vec![system_msg.clone()];
+            current_chat.extend(body_messages.clone());
+
+            let chat_str = self.model
+                .apply_chat_template(&template, &current_chat, true)
+                .map_err(|e| format!("Template error: {:?}", e))?;
+
+            tokens = self.model
+                .str_to_token(&chat_str, llama_cpp_2::model::AddBos::Never)
+                .map_err(|e| format!("Tokenization error: {:?}", e))?;
+
+            // Check if we are within bounds
+            if tokens.len() + reserve_for_output <= self.max_context_length as usize {
+                break;
+            }
+
+            // If too long and we have messages to remove, remove the oldest one (index 0)
+            if !body_messages.is_empty() {
+                body_messages.remove(0);
             } else {
-                ast_role
-            };
-            let segment = format!("{}{}{}{}{}", prefix, role, suffix, msg.content, eot);
-
-            if current_len + segment.len() < self.max_context_length as usize {
-                current_len += segment.len();
-                message_segments.push(segment);
-            } else {
+                // If even the system prompt alone is too long, we must truncate the tokens directly
+                tokens.truncate(self.max_context_length as usize - reserve_for_output);
                 break;
             }
         }
 
-        message_segments.reverse();
-        for seg in message_segments {
-            full_prompt.push_str(&seg);
-        }
-        full_prompt.push_str(&format!("{}{}{}", prefix, ast_role, suffix));
-
-        model
-            .str_to_token(&full_prompt, AddBos::Always)
-            .map_err(|e| format!("{:?}", e))
+        Ok(tokens)
     }
 }
 

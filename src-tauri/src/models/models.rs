@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 pub struct Model {
     pub name: String,
     pub repo: String,
-    pub size: i64,
+    pub size: f32,
     pub prefix: String,
     pub suffix: String,
     pub eot: String,
