@@ -38,6 +38,16 @@ pub fn default_models() -> &'static HashMap<String, Model> {
                 },
             ),
             (
+                "Llama-3.2-3B-Instruct-Q4_K_M.gguf".to_string(),
+                Model {
+                    name: "Llama-3.2-3B-Instruct".to_string(),
+                    repo: "bartowski/Llama-3.2-3B-Instruct-GGUF".to_string(),
+                    size: 2.02 * 1024.0,
+                    supports_vision: false,
+                    params: "3B".to_string(),
+                },
+            ),
+            (
                 "SmolLM2-360M-Instruct.Q4_K_M.gguf".to_string(),
                 Model {
                     name: "SmolLM2-360M-Instruct".to_string(),
@@ -55,6 +65,46 @@ pub fn default_models() -> &'static HashMap<String, Model> {
                     size: 1.92 * 1024.0,
                     supports_vision: false,
                     params: "3B".to_string(),
+                },
+            ),
+            (
+                "Qwen3-1.7B.Q4_K_M.gguf".to_string(),
+                Model {
+                    name: "Qwen3-1.7B".to_string(),
+                    repo: "QuantFactory/Qwen3-1.7B-GGUF".to_string(),
+                    size: 1.28 * 1024.0,
+                    supports_vision: false,
+                    params: "1.7B".to_string(),
+                },
+            ),
+            (
+                "Qwen2.5-1.5B-Instruct.Q4_K_M.gguf".to_string(),
+                Model {
+                    name: "Qwen2.5-1.5B-Instruct".to_string(),
+                    repo: "QuantFactory/Qwen2.5-1.5B-Instruct-GGUF".to_string(),
+                    size: 986.0,
+                    supports_vision: false,
+                    params: "1.5B".to_string(),
+                },
+            ),
+            (
+                "palmyra-mini-thinking-a.Q4_K_M.gguf".to_string(),
+                Model {
+                    name: "Palymara-Mini-Thinking".to_string(),
+                    repo: "QuantFactory/palmyra-mini-thinking-a-GGUF".to_string(),
+                    size: 1.12 * 1024.0,
+                    supports_vision: false,
+                    params: "1.7B".to_string(),
+                },
+            ),
+            (
+                "DeepSeek-R1-Distill-Qwen-1.5B.Q4_K_M.gguf".to_string(),
+                Model {
+                    name: "DeepSeek-R1-Distill-Qwen-1.5B".to_string(),
+                    repo: "QuantFactory/DeepSeek-R1-Distill-Qwen-1.5B-GGUF".to_string(),
+                    size: 1.12 * 1024.0,
+                    supports_vision: false,
+                    params: "1.5B".to_string(),
                 },
             ),
         ])

@@ -88,7 +88,13 @@ impl Inference {
         let mut n_cur: u64 = batch.n_tokens() as u64;
         let cur: u64 = batch.n_tokens() as u64;
         let decoder: &mut encoding_rs::Decoder = &mut encoding_rs::UTF_8.new_decoder();
-        let mut sampler = LlamaSampler::greedy();
+
+        // TODO extract to config
+        let temperature = 0.6; 
+        let mut sampler = LlamaSampler::chain(vec![
+            LlamaSampler::temp(temperature),
+            LlamaSampler::dist(1),
+        ], false);
         let mut message = String::new();
 
         while n_cur < self.batch_size && n_cur - cur < self.max_output_length {
