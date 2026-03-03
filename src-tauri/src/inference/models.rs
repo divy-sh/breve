@@ -22,11 +22,8 @@ pub struct StreamingContent {
 pub struct Inference {
     model: Arc<LlamaModel>,
     pub ctx: LlamaContext<'static>,
-    pub batch_size: u64,
-    pub max_context_length: u64,
-    pub max_output_length: u64,
     pub model_attrs: Model,
-    pub system_prompt: String,
+    pub config: Config,
 }
 
 impl Inference {
@@ -56,15 +53,13 @@ impl Inference {
         Ok(Self {
             model,
             ctx,
-            batch_size: config.batch_size,
-            max_context_length: config.max_context_length,
-            max_output_length: config.max_output_length,
+
             model_attrs: config
                 .get_available_models()
                 .get(&config.default_model)
                 .cloned()
                 .unwrap(),
-            system_prompt: config.system_prompt.clone(),
+            config: config.clone(),
         })
     }
 
@@ -72,7 +67,7 @@ impl Inference {
         let model = &self.model;
         self.ctx.clear_kv_cache();
 
-        let mut batch = LlamaBatch::new(self.batch_size as usize, 8);
+        let mut batch = LlamaBatch::new(self.config.batch_size as usize, 8);
 
         let tokens_list = self.format_prompt(conv)?;
         let last_index = tokens_list.len() as i32 - 1;
@@ -89,15 +84,13 @@ impl Inference {
         let cur: u64 = batch.n_tokens() as u64;
         let decoder: &mut encoding_rs::Decoder = &mut encoding_rs::UTF_8.new_decoder();
 
-        // TODO extract to config
-        let temperature = 0.6; 
         let mut sampler = LlamaSampler::chain(vec![
-            LlamaSampler::temp(temperature),
+            LlamaSampler::temp(self.config.temperature),
             LlamaSampler::dist(1),
         ], false);
         let mut message = String::new();
 
-        while n_cur < self.batch_size && n_cur - cur < self.max_output_length {
+        while n_cur < self.config.batch_size && n_cur - cur < self.config.max_output_length {
             let token = sampler.sample(&self.ctx, batch.n_tokens() - 1);
             sampler.accept(token);
             if token == model.token_eos() {
@@ -126,7 +119,7 @@ impl Inference {
     }
 
     pub fn format_prompt(&self, conv: &Conversation) -> Result<Vec<llama_cpp_2::token::LlamaToken>, String> {
-        let system_msg = LlamaChatMessage::new("system".to_string(), self.system_prompt.clone())
+        let system_msg = LlamaChatMessage::new("system".to_string(), self.config.system_prompt.clone())
             .map_err(|e| format!("Invalid system prompt: {:?}", e))?;
 
         // 1. Start with all current messages
@@ -139,7 +132,7 @@ impl Inference {
             .map_err(|e| format!("Failed to get chat template: {:?}", e))?;
 
         let mut tokens: Vec<llama_cpp_2::token::LlamaToken>;
-        let reserve_for_output = self.max_output_length as usize;
+        let reserve_for_output = self.config.max_output_length as usize;
         
         // 2. Sliding Window: Remove oldest messages until the prompt fits
         // We loop, checking if (System + Body + New Output) <= Context Limit
@@ -156,7 +149,7 @@ impl Inference {
                 .map_err(|e| format!("Tokenization error: {:?}", e))?;
 
             // Check if we are within bounds
-            if tokens.len() + reserve_for_output <= self.max_context_length as usize {
+            if tokens.len() + reserve_for_output <= self.config.max_context_length as usize {
                 break;
             }
 
@@ -165,7 +158,7 @@ impl Inference {
                 body_messages.remove(0);
             } else {
                 // If even the system prompt alone is too long, we must truncate the tokens directly
-                tokens.truncate(self.max_context_length as usize - reserve_for_output);
+                tokens.truncate(self.config.max_context_length as usize - reserve_for_output);
                 break;
             }
         }

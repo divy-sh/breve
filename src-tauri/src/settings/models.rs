@@ -5,24 +5,26 @@ use crate::{
     models::models::Model,
 };
 
+#[derive(Debug, Clone)]
 pub struct Config {
     pub default_model: String,
     pub batch_size: u64,
     pub max_context_length: u64,
     pub max_output_length: u64,
     pub system_prompt: String,
+    pub temperature: f32,
     pub models: &'static HashMap<String, Model>,
 }
 
 impl Config {
     pub fn init() -> Config {
-        let global_mem_bytes: u64 = 4 * 1024 * 1024 * 1024;
-        let model_size_bytes: u64 = 1024 * 1024 * 1024;
+        let global_mem_bytes: u64 = consts::DEFAULT_GLOBAL_MEM_BYTES;
+        let model_size_bytes: u64 = consts::DEFAULT_MODEL_SIZE_BYTES;
         let memory_for_context: u64 = global_mem_bytes.saturating_sub(model_size_bytes);
-
-        let bytes_per_token: u64 = 8 * 1024;
-
+        let bytes_per_token: u64 = consts::DEFAULT_BYTES_PER_TOKEN;
         let max_context_tokens = memory_for_context / bytes_per_token;
+        let temperature = consts::DEFAULT_TEMPERATURE;
+
 
         let batch_size = max_context_tokens.clamp(4096, 32768);
         Config {
@@ -32,6 +34,7 @@ impl Config {
             system_prompt: consts::DEFAULT_SYSTEM_PROMPT.to_string(),
             models: consts::default_models(),
             default_model: "".to_string(),
+            temperature: temperature,
         }
     }
 

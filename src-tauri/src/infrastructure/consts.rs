@@ -11,6 +11,7 @@ pub const DEFAULT_GLOBAL_MEM_BYTES: u64 = 4 * 1024 * 1024 * 1024;
 pub const DEFAULT_MODEL_SIZE_BYTES: u64 = 1024 * 1024 * 1024;
 pub const DEFAULT_BYTES_PER_TOKEN: u64 = 8 * 1024;
 pub const DEFAULT_MAX_OUTPUT_LENGTH: u64 = 4096;
+pub const DEFAULT_TEMPERATURE: f32 = 0.6;
 
 static DEFAULT_MODELS: OnceLock<HashMap<String, Model>> = OnceLock::new();
 

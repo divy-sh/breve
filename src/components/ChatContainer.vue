@@ -11,8 +11,9 @@
   import MessageInput from './MessageInput.vue';
   import type { Conversation } from '../types';
   import { ref } from 'vue';
-  import Settings from './Settings.vue';
+  import Models from './Models.vue';
   import type { StreamPayload } from '../types';
+  import Settings from './Settings.vue';
 
   // Props
   defineProps<{
@@ -38,6 +39,7 @@
     popoverOpened.value = true;
   };
 
+  const openModels = ref(false);
   const openSettings = ref(false);
 </script>
 
@@ -68,18 +70,23 @@
         </template>
       </k-list-item>
 
+      <k-list-item title="Models" link @click="() => { openModels = true; popoverOpened = false; }">
+        <template #media>
+          <i class="pi pi-file mr-2"></i>
+        </template>
+      </k-list-item>
+      
       <k-list-item title="Settings" link @click="() => { openSettings = true; popoverOpened = false; }">
         <template #media>
           <i class="pi pi-cog mr-2"></i>
         </template>
       </k-list-item>
-      
-      <k-list-item title="Close" link @click="() => (popoverOpened = false)">
-        <template #media>
-          <i class="pi pi-times mr-2"></i>
-        </template>
-      </k-list-item>
     </k-popover>
+
+    <Models
+      :openModels="openModels"
+      @close="openModels = false"
+     />
 
     <Settings
       :openSettings="openSettings"
