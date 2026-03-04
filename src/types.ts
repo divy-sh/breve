@@ -18,3 +18,9 @@ export interface StreamPayload {
   id: string;
   content: string;
 }
+
+// TODO add other fields as required
+export interface ModelConfig {
+  temperature: number;
+  system_prompt: string;
+}

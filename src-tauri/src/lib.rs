@@ -48,6 +48,7 @@ pub fn run() {
             models::controller::get_default_model,
             infrastructure::controller::get_config,
             infrastructure::controller::set_config,
+            configuration::controller::get_model_config,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

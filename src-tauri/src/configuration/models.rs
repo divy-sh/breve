@@ -5,7 +5,7 @@ use crate::{
     models::models::Model,
 };
 
-#[derive(Debug, Clone)]
+#[derive(serde::Serialize, Clone)]
 pub struct Config {
     pub default_model: String,
     pub batch_size: u64,

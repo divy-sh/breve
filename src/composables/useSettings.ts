@@ -9,8 +9,13 @@ export function useSettings() {
         return await invoke<void>("set_config", { key, value });
     }
 
+    async function getModelConfig() {
+        return await invoke<JSON>("get_model_config")
+    }
+
     return {
         getConfig,
-        setConfig
+        setConfig,
+        getModelConfig,
     };
 }
