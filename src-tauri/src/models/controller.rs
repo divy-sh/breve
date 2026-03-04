@@ -4,13 +4,12 @@ use tauri::{State, Window, async_runtime::Mutex};
 
 use crate::{
     inference,
-    infrastructure::{context::Context, path_resolver},
+    infrastructure::{self, context::Context, path_resolver},
     models::{
         self,
         models::Model,
         service::{SET, UNSET},
     },
-    settings,
 };
 
 #[tauri::command]
@@ -115,7 +114,7 @@ pub async fn delete_model(
         config.default_model.clear();
         ctx.inference = None;
 
-        settings::service::set_config("model_name".into(), "".into()).map_err(|e| e.to_string())?;
+        infrastructure::service::set_config("model_name".into(), "".into()).map_err(|e| e.to_string())?;
     }
 
     Ok(())

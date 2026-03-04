@@ -11,7 +11,7 @@ use tauri::{Emitter, Window};
 
 use crate::conversation::models::Conversation;
 use crate::models::models::Model;
-use crate::settings::models::Config;
+use crate::configuration::models::Config;
 
 #[derive(Debug, Clone, serde::Serialize)]
 pub struct StreamingContent {

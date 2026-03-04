@@ -4,7 +4,7 @@ pub mod conversation;
 pub mod inference;
 pub mod infrastructure;
 pub mod models;
-pub mod settings;
+pub mod configuration;
 
 use tauri::{Manager, async_runtime::Mutex};
 
@@ -21,7 +21,7 @@ pub fn run() {
             let mut ctx = Context::init()?;
 
             let saved_model =
-                settings::service::get_config("model_name".to_string()).unwrap_or_default();
+                infrastructure::service::get_config("model_name".to_string()).unwrap_or_default();
 
             if !saved_model.is_empty() {
                 let _ = inference::service::activate_model(saved_model, &mut ctx);
@@ -46,8 +46,8 @@ pub fn run() {
             models::controller::delete_model,
             models::controller::set_default_model,
             models::controller::get_default_model,
-            settings::controller::get_config,
-            settings::controller::set_config,
+            infrastructure::controller::get_config,
+            infrastructure::controller::set_config,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

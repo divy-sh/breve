@@ -1,8 +1,7 @@
 use crate::{
     inference::models::Inference,
-    infrastructure::{context::Context, path_resolver},
-    settings,
-    settings::models::Config,
+    infrastructure::{self, context::Context, path_resolver},
+    configuration::models::Config,
 };
 
 fn validate_model(config: &Config, model_name: &str) -> Result<(), String> {
@@ -22,7 +21,7 @@ fn validate_model(config: &Config, model_name: &str) -> Result<(), String> {
 pub fn activate_model(model_name: String, ctx: &mut Context) -> Result<(), String> {
     validate_model(&ctx.config, &model_name)?;
     // persist
-    settings::service::set_config("model_name".into(), model_name.clone())
+    infrastructure::service::set_config("model_name".into(), model_name.clone())
         .map_err(|e| e.to_string())?;
 
     ctx.config.default_model = model_name.clone();

@@ -1,6 +1,6 @@
 use rusqlite::Result;
 
-use crate::settings::repository as dao;
+use crate::infrastructure::repository as dao;
 
 pub fn get_config(key: String) -> Result<String, String> {
     dao::get_config(key)

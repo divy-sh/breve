@@ -1,4 +1,4 @@
-use crate::settings::service;
+use crate::infrastructure::service;
 
 #[tauri::command]
 pub async fn get_config(key: String) -> Result<String, String> {
