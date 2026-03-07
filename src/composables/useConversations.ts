@@ -2,6 +2,7 @@ import { ref } from 'vue';
 import { invoke } from "@tauri-apps/api/core";
 import type { Conversation, ConversationSummary } from '../types';
 import { useSettings } from './useSettings';
+import { getProductStatus, purchase, PurchaseState } from '@choochmeque/tauri-plugin-iap-api';
 
 const conversations = ref<ConversationSummary[]>([]);
 const currentConversation = ref<Conversation | null>(null);
@@ -9,6 +10,8 @@ const modelStatus = ref<string>("UNSET");
 const availableModels = ref<Record<string,string>>({});
 const downloadedModels = ref<string[]>([]);
 const defaultModel = ref<string>("");
+const isSubscribed = ref(false);
+
 const { setConfig } = useSettings();
 
 export function useConversations() {
@@ -189,6 +192,35 @@ export function useConversations() {
     }
   }
 
+  async function refreshVariables() {
+    availableModels.value = await getAvailableModels();
+    downloadedModels.value = await listDownloadedModels();
+    defaultModel.value = await getDefaultModel();
+    modelStatus.value = await getModelStatus();
+  }
+
+  async function checkSubscription() {
+    try {
+      const status = await getProductStatus('subscription_breve_basic', 'subs');
+      isSubscribed.value = status.isOwned && status.purchaseState === PurchaseState.PURCHASED;
+    } catch (err) {
+      console.error("IAP Check Failed, defaulting to unsubscribed:", err);
+      isSubscribed.value = false; 
+    }
+  }
+
+  async function onSubscribe() {
+    try {
+      const result = await purchase("subscription_breve_basic", 'subs');
+      if (result.purchaseState === PurchaseState.PURCHASED) {
+        isSubscribed.value = true;
+        await refreshVariables();
+      }
+    } catch (err) {
+
+    }
+  }
+
   return {
     conversations,
     currentConversation,
@@ -196,6 +228,7 @@ export function useConversations() {
     availableModels,
     downloadedModels,
     defaultModel,
+    isSubscribed,
     loadConversations,
     loadConversation,
     startNewConversation,
@@ -208,6 +241,9 @@ export function useConversations() {
     setDefaultModel,
     getDefaultModel,
     getModelStatus,
-    abortGeneration
+    abortGeneration,
+    refreshVariables,
+    checkSubscription,
+    onSubscribe,
   };
 }
