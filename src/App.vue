@@ -7,8 +7,8 @@ import Sidebar from "./components/Sidebar.vue";
 import ChatContainer from "./components/ChatContainer.vue";
 import { useConversations } from "./composables/useConversations";
 import { useSettings } from './composables/useSettings';
-import ModelsDownload from './components/ModelsDownload.vue';
 import type { StreamPayload } from './types';
+import ModelPickInit from './components/ModelPickInit.vue';
 
 const {
   conversations, 
@@ -113,7 +113,7 @@ provide('AppTheme', {
 
 <template>
   <k-app :theme="theme">
-    <ModelsDownload v-if="modelStatus === 'UNSET'" />
+    <ModelPickInit v-if="modelStatus === 'UNSET'" />
 
     <Sidebar v-if="modelStatus === 'SET'"
       :conversations="conversations"

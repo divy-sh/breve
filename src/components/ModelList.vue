@@ -42,13 +42,16 @@ onMounted(async () => {
 </script>
 
 <template>
-  <k-block-title v-if="downloadedList.length > 0">Downloaded Models</k-block-title>
-  <k-list strong inset dividers>
-    <ModelCard v-for="name in downloadedList" :key="name" :model="availableModels[name]" :modelName="name"/>
-  </k-list>
-
-  <k-block-title v-if="availableList.length > 0">Available Models</k-block-title>
-  <k-list strong inset dividers>
-    <ModelCard v-for="name in availableList" :key="name" :model="availableModels[name]" :modelName="name"/>
-  </k-list>
+  <template v-if="downloadedList.length > 0">
+    <k-block-title>Downloaded Models</k-block-title>
+    <k-list strong inset dividers>
+      <ModelCard v-for="name in downloadedList" :key="name" :model="availableModels[name]" :modelName="name"/>
+    </k-list>
+  </template>
+  <template v-if="availableList.length > 0">
+    <k-block-title >Available Models</k-block-title>
+    <k-list strong inset dividers>
+      <ModelCard v-for="name in availableList" :key="name" :model="availableModels[name]" :modelName="name"/>
+    </k-list>
+  </template>
 </template>

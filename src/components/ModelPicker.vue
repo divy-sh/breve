@@ -1,6 +1,6 @@
 <script setup lang="ts">
   import { kPopup, Navbar, Page, Link } from 'konsta/vue';
-  import ModelsDownload from './ModelsDownload.vue';
+  import ModelList from './ModelList.vue';
 
   const { openModels: openModels } = defineProps<{ openModels: boolean }>();
 
@@ -12,7 +12,7 @@
 <template>
     <k-popup :opened="openModels" @backdropclick="emit('close')">
       <Page>
-        <Navbar title="Settings">
+        <Navbar title="Models">
           <template #right>
             <Link icon-only @click="emit('close')">
               <i class="pi pi-times p-2"></i>
@@ -20,7 +20,7 @@
           </template>
         </Navbar>
 
-        <ModelsDownload/>
+        <ModelList/>
       </Page>
 
     </k-popup>

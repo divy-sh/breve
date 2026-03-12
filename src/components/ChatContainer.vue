@@ -11,7 +11,7 @@
   import MessageInput from './MessageInput.vue';
   import type { Conversation } from '../types';
   import { ref } from 'vue';
-  import Models from './Models.vue';
+  import ModelPicker from './ModelPicker.vue';
   import type { StreamPayload } from '../types';
   import Settings from './Settings.vue';
 
@@ -83,7 +83,7 @@
       </k-list-item>
     </k-popover>
 
-    <Models
+    <ModelPicker
       :openModels="openModels"
       @close="openModels = false"
      />

@@ -100,6 +100,9 @@ onUnmounted(() => {
                 <k-chip class="m-0.5 max-w-full">
                     <span class="truncate">Size: {{ model['size' as any] }} MB</span>
                 </k-chip>
+                <k-chip v-if="model['is_thinking' as any] == true">
+                    <span class="truncate">Thinking</span>
+                </k-chip>
             </div>
             <template v-if="downloadedModels.includes(props.modelName)">
                 <k-button v-if="isLocked()" clear inline @click="onSubscribe" class="w-1/3">
