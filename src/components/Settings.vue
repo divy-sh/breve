@@ -4,7 +4,7 @@
   import { onMounted, ref } from 'vue';
   import { ModelConfig } from '../types';
   
-  const { getModelConfig } = useSettings();
+  const { getModelConfig, setModelConfig } = useSettings();
   const { openSettings } = defineProps<{ openSettings: boolean }>();
 
   const modelSettings = ref<ModelConfig>({ temperature: 0, system_prompt: "" });
@@ -64,7 +64,7 @@
 
         <k-block>
           <k-list-item>
-            <k-button><i class="pi pi-save"></i> Save</k-button>
+            <k-button @click="setModelConfig(modelSettings)"><i class="pi pi-save"></i> Save</k-button>
           </k-list-item>
         </k-block>
       </Page>

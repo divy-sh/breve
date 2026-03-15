@@ -1,10 +1,10 @@
 use std::sync::Arc;
 
+pub mod configuration;
 pub mod conversation;
 pub mod inference;
 pub mod infrastructure;
 pub mod models;
-pub mod configuration;
 
 use tauri::{Manager, async_runtime::Mutex};
 
@@ -49,6 +49,7 @@ pub fn run() {
             infrastructure::controller::get_config,
             infrastructure::controller::set_config,
             configuration::controller::get_model_config,
+            configuration::controller::set_model_config,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

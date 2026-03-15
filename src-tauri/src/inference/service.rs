@@ -1,7 +1,7 @@
 use crate::{
+    configuration::models::Config,
     inference::models::Inference,
     infrastructure::{self, context::Context, path_resolver},
-    configuration::models::Config,
 };
 
 fn validate_model(config: &Config, model_name: &str) -> Result<(), String> {

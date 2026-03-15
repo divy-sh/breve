@@ -1,11 +1,12 @@
 use std::collections::HashMap;
 
 use crate::{
+    configuration::repository,
     infrastructure::{consts, path_resolver},
     models::models::Model,
 };
 
-#[derive(serde::Serialize, Clone)]
+#[derive(serde::Serialize, serde::Deserialize, Clone)]
 pub struct Config {
     pub default_model: String,
     pub batch_size: u64,
@@ -13,6 +14,7 @@ pub struct Config {
     pub max_output_length: u64,
     pub system_prompt: String,
     pub temperature: f32,
+    #[serde(skip, default = "crate::infrastructure::consts::default_models")]
     pub models: &'static HashMap<String, Model>,
 }
 
@@ -23,9 +25,11 @@ impl Config {
         let memory_for_context: u64 = global_mem_bytes.saturating_sub(model_size_bytes);
         let bytes_per_token: u64 = consts::DEFAULT_BYTES_PER_TOKEN;
         let max_context_tokens = memory_for_context / bytes_per_token;
-        let temperature = consts::DEFAULT_TEMPERATURE;
-
-
+        let temperature = repository::get_model_config("temperature".to_string())
+            .ok()
+            .flatten()
+            .and_then(|s| s.parse().ok())
+            .unwrap_or(consts::DEFAULT_TEMPERATURE);
         let batch_size = max_context_tokens.clamp(4096, 32768);
         Config {
             batch_size: batch_size,

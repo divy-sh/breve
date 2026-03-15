@@ -2,16 +2,16 @@ use llama_cpp_2::context::LlamaContext;
 use llama_cpp_2::context::params::LlamaContextParams;
 use llama_cpp_2::llama_backend::LlamaBackend;
 use llama_cpp_2::llama_batch::LlamaBatch;
-use llama_cpp_2::model::{LlamaChatMessage, LlamaModel};
 use llama_cpp_2::model::params::LlamaModelParams;
+use llama_cpp_2::model::{LlamaChatMessage, LlamaModel};
 use llama_cpp_2::sampling::LlamaSampler;
 use std::num::NonZero;
 use std::sync::Arc;
 use tauri::{Emitter, Window};
 
+use crate::configuration::models::Config;
 use crate::conversation::models::Conversation;
 use crate::models::models::Model;
-use crate::configuration::models::Config;
 
 #[derive(Debug, Clone, serde::Serialize)]
 pub struct StreamingContent {
@@ -41,7 +41,9 @@ impl Inference {
 
         let ctx_params = LlamaContextParams::default()
             .with_n_batch(config.batch_size.try_into().unwrap())
-            .with_n_ctx(Some(NonZero::try_from(config.max_context_length as u32).unwrap()));
+            .with_n_ctx(Some(
+                NonZero::try_from(config.max_context_length as u32).unwrap(),
+            ));
 
         let ctx = unsafe {
             let internal_ctx = model
@@ -84,10 +86,13 @@ impl Inference {
         let cur: u64 = batch.n_tokens() as u64;
         let decoder: &mut encoding_rs::Decoder = &mut encoding_rs::UTF_8.new_decoder();
 
-        let mut sampler = LlamaSampler::chain(vec![
-            LlamaSampler::temp(self.config.temperature),
-            LlamaSampler::dist(1),
-        ], false);
+        let mut sampler = LlamaSampler::chain(
+            vec![
+                LlamaSampler::temp(self.config.temperature),
+                LlamaSampler::dist(1),
+            ],
+            false,
+        );
         let mut message = String::new();
 
         while n_cur < self.config.batch_size && n_cur - cur < self.config.max_output_length {
@@ -118,33 +123,49 @@ impl Inference {
         Ok(message)
     }
 
-    pub fn format_prompt(&self, conv: &Conversation) -> Result<Vec<llama_cpp_2::token::LlamaToken>, String> {
-        let system_msg = LlamaChatMessage::new("system".to_string(), self.config.system_prompt.clone())
-            .map_err(|e| format!("Invalid system prompt: {:?}", e))?;
+    pub fn format_prompt(
+        &self,
+        conv: &Conversation,
+    ) -> Result<Vec<llama_cpp_2::token::LlamaToken>, String> {
+        let system_msg =
+            LlamaChatMessage::new("system".to_string(), self.config.system_prompt.clone())
+                .map_err(|e| format!("Invalid system prompt: {:?}", e))?;
 
         // 1. Start with all current messages
-        let mut body_messages: Vec<LlamaChatMessage> = conv.body.iter().map(|msg| {
-            let role = if msg.role == "user" { "user" } else { "assistant" };
-            LlamaChatMessage::new(role.to_string(), msg.content.clone()).unwrap()
-        }).collect();
+        let mut body_messages: Vec<LlamaChatMessage> = conv
+            .body
+            .iter()
+            .map(|msg| {
+                let role = if msg.role == "user" {
+                    "user"
+                } else {
+                    "assistant"
+                };
+                LlamaChatMessage::new(role.to_string(), msg.content.clone()).unwrap()
+            })
+            .collect();
 
-        let template = self.model.chat_template(None)
+        let template = self
+            .model
+            .chat_template(None)
             .map_err(|e| format!("Failed to get chat template: {:?}", e))?;
 
         let mut tokens: Vec<llama_cpp_2::token::LlamaToken>;
         let reserve_for_output = self.config.max_output_length as usize;
-        
+
         // 2. Sliding Window: Remove oldest messages until the prompt fits
         // We loop, checking if (System + Body + New Output) <= Context Limit
         loop {
             let mut current_chat = vec![system_msg.clone()];
             current_chat.extend(body_messages.clone());
 
-            let chat_str = self.model
+            let chat_str = self
+                .model
                 .apply_chat_template(&template, &current_chat, true)
                 .map_err(|e| format!("Template error: {:?}", e))?;
 
-            tokens = self.model
+            tokens = self
+                .model
                 .str_to_token(&chat_str, llama_cpp_2::model::AddBos::Never)
                 .map_err(|e| format!("Tokenization error: {:?}", e))?;
 

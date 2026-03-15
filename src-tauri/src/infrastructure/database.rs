@@ -23,6 +23,7 @@ impl Database {
 
             _ = db.init_conversation_dao();
             _ = db.init_settings_dao();
+            _ = db.init_model_config_dao();
 
             db
         })
@@ -53,6 +54,19 @@ impl Database {
         )?;
         Ok(())
     }
+
+        pub fn init_model_config_dao(&self) -> Result<()> {
+        let conn = self.pool.get().expect("Failed to get connection from pool");
+        conn.execute(
+            "CREATE TABLE IF NOT EXISTS model_config (
+                key TEXT PRIMARY KEY,
+                value TEXT NOT NULL
+            )",
+            [],
+        )?;
+        Ok(())
+    }
+
 
     pub fn get_conn(&self) -> r2d2::PooledConnection<SqliteConnectionManager> {
         self.pool.get().expect("Database pool exhausted")

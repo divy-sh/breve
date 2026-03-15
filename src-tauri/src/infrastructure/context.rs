@@ -1,4 +1,4 @@
-use crate::{inference::models::Inference, configuration::models::Config};
+use crate::{configuration::models::Config, inference::models::Inference};
 
 pub struct Context {
     pub config: Config,

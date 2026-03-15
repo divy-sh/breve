@@ -2,7 +2,7 @@
 import { onMounted, onUnmounted, ref } from 'vue';
 import { useConversations } from '../composables/useConversations';
 import { listen } from '@tauri-apps/api/event';
-import { kListItem, kButton, kChip, kProgressbar } from 'konsta/vue';
+import { kListItem, kButton, kChip, kProgressbar, kDialog } from 'konsta/vue';
 
 
 const props = defineProps<{ model: any; modelName: string }>();
@@ -132,11 +132,11 @@ onUnmounted(() => {
     </k-list-item>
 
 
-    <Dialog :opened="showDeleteConfirm" title="Confirm Delete" @backdrop-click="showDeleteConfirm = false">
+    <k-dialog :opened="showDeleteConfirm" @backdrop-click="showDeleteConfirm = false">
         <p class="mb-4">Are you sure you want to delete <strong>{{ modelToDelete }}</strong>?</p>
         <div class="flex gap-2">
             <k-button @click="showDeleteConfirm = false" outline>Cancel</k-button>
             <k-button @click="proceedDelete" class="k-color-brand-red">Delete</k-button>
         </div>
-    </Dialog>
+    </k-dialog>
 </template>

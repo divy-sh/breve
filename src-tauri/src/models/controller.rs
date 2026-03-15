@@ -114,7 +114,8 @@ pub async fn delete_model(
         config.default_model.clear();
         ctx.inference = None;
 
-        infrastructure::service::set_config("model_name".into(), "".into()).map_err(|e| e.to_string())?;
+        infrastructure::service::set_config("model_name".into(), "".into())
+            .map_err(|e| e.to_string())?;
     }
 
     Ok(())

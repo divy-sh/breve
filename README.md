@@ -165,3 +165,6 @@ Learn more about Take Over mode [here](https://github.com/johnsoncodehk/volar/di
 ## Contributing
 
 Contributions are welcome! Please open issues and pull requests to help improve Breve.
+
+## TODO
+1. Fix the model switching issue on model configuration change.
