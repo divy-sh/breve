@@ -23,4 +23,6 @@ export interface StreamPayload {
 export interface ModelConfig {
   temperature: number;
   system_prompt: string;
+  max_output_length: number;
+  max_context_length: number;
 }

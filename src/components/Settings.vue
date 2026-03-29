@@ -7,7 +7,7 @@
   const { getModelConfig, setModelConfig } = useSettings();
   const { openSettings } = defineProps<{ openSettings: boolean }>();
 
-  const modelSettings = ref<ModelConfig>({ temperature: 0, system_prompt: "" });
+  const modelSettings = ref<ModelConfig>({ temperature: 0, system_prompt: "", max_output_length: 0, max_context_length: 0 });
 
   const emit = defineEmits<{
       (e: 'close'): void;
@@ -42,6 +42,40 @@
                   @input="(e: any) => (modelSettings.temperature = parseFloat(e.target.value) / 100.0)"
                 />
                 <span>1.0</span>
+              </template>
+            </k-list-item>
+          </k-list>
+        </k-block>
+
+        <k-block-title>Maximum Output Length {{ modelSettings.max_output_length }}</k-block-title>
+        <k-block>
+          <k-list strong inset>
+            <k-list-item inner-class="flex gap-4 items-center">
+              <template #inner>
+                <span>1024</span>
+                <k-range
+                  :value="(modelSettings.max_output_length - 1024) / 3072 * 100"
+                  :step="1"
+                  @input="(e: any) => (modelSettings.max_output_length = parseFloat(e.target.value) / 100.0 * 3072 + 1024)"
+                />
+                <span>4096</span>
+              </template>
+            </k-list-item>
+          </k-list>
+        </k-block>
+
+        <k-block-title>Maximum Context Length {{ modelSettings.max_context_length }}</k-block-title>
+        <k-block>
+          <k-list strong inset>
+            <k-list-item inner-class="flex gap-4 items-center">
+              <template #inner>
+                <span>4096</span>
+                <k-range
+                  :value="(modelSettings.max_context_length - 4096) / 28672 * 100"
+                  :step="1"
+                  @input="(e: any) => (modelSettings.max_context_length = parseFloat(e.target.value) / 100 * 28672 + 4096)"
+                />
+                <span>32768</span>
               </template>
             </k-list-item>
           </k-list>
