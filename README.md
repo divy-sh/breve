@@ -106,6 +106,11 @@ signingConfigs {
 }
 buildTypes {
    ...
+   getByName("release") {
+      ...
+      signingConfig = signingConfigs.getByName("release") // add this line
+      ...
+   }
 }
 ```
 
@@ -131,20 +136,22 @@ storeFile=your google play keystore file path
 
 apk file
 ```sh
-npm run tauri android build -- --apk
+npm run tauri android build -- --apk true
 ```
 
 aab file
 ```sh
-npm run tauri android build -- --aab
-```
-```sh
---relese // add this for release
+npm run tauri android build -- --aab true
 ```
 
-If you want to set build type debug:
+Release build
 ```sh
---debug // add this for debug
+npm run tauri android build --release
+```
+
+Debug build
+```sh
+npm run tauri android build --debug
 ```
 
 To sign the android package, go through the following link:
