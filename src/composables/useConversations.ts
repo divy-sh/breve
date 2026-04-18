@@ -201,7 +201,7 @@ export function useConversations() {
 
   async function checkSubscription() {
     try {
-      const status = await getProductStatus('subscription_breve_basic', 'subs');
+      const status = await getProductStatus('breve_monthly_1_99', 'subs');
       isSubscribed.value = status.isOwned && status.purchaseState === PurchaseState.PURCHASED;
     } catch (err) {
       console.error("IAP Check Failed, defaulting to unsubscribed:", err);
@@ -211,7 +211,7 @@ export function useConversations() {
 
   async function onSubscribe() {
     try {
-      const result = await purchase("subscription_breve_basic", 'subs');
+      const result = await purchase("breve_monthly_1_99", 'subs');
       if (result.purchaseState === PurchaseState.PURCHASED) {
         isSubscribed.value = true;
         await refreshVariables();
