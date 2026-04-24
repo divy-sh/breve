@@ -81,6 +81,7 @@ npm run tauri build
 - Intall android ndk, and export its path - export NDK_HOME "android/ndk/ndk-version"
 - export CARGO_CFG_TARGET_FEATURE="npm run tauri android build"
 - Run npm run tauri android init
+- Run npm run tauri icon ./public/icon.png
 
 To package for android:
 
@@ -126,7 +127,7 @@ Add the following to src-tauri/gen/android/app/src/main/AndroidManifest.xml
 </activity>
 ```
 
-Add File keystorre.properties to src-tauri/gen/android/
+Add File keystore.properties to src-tauri/gen/android/
 
 ```properties
 password=you key alias password
