@@ -3,6 +3,7 @@ import { onMounted, computed } from 'vue';
 import { kBlockTitle, kList } from 'konsta/vue';
 import { useConversations } from '../composables/useConversations';
 import ModelCard from './ModelCard.vue';
+import ImportModel from './ImportModel.vue';
 
 const {
   availableModels,
@@ -42,6 +43,8 @@ onMounted(async () => {
 </script>
 
 <template>
+  // TODO: implement model functionality
+  <!-- <ImportModel :openImportModel="false" @close="() => {}" /> -->
   <template v-if="downloadedList.length > 0">
     <k-block-title>Downloaded Models</k-block-title>
     <k-list strong inset dividers>
