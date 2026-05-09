@@ -1,5 +1,5 @@
 <script setup lang="ts">
-    import { kBlockTitle, kList } from 'konsta/vue';
+    import { kList, kPopup, kNavbar, Link } from 'konsta/vue';
 
     const { openImportModel } = defineProps<{ openImportModel: boolean }>();
     const emit = defineEmits<{
@@ -9,7 +9,13 @@
 
 <template>
     <k-popup :opened="openImportModel" @backdropclick="emit('close')">
-        <k-block-title>Import Model</k-block-title>
+        <k-navbar title="Import Model">
+          <template #right>
+            <Link icon-only @click="emit('close')">
+              <i class="pi pi-times p-2"></i>
+            </Link>
+          </template>
+        </k-navbar>
         <k-list strong inset dividers>
             <p class="p-4 text-center text-gray-500">Model import functionality is not implemented yet.</p>
         </k-list>

@@ -113,8 +113,6 @@ provide('AppTheme', {
 
 <template>
   <k-app :theme="theme">
-    <ModelPickInit v-if="modelStatus === 'UNSET'" />
-
     <Sidebar v-if="modelStatus === 'SET'"
       :conversations="conversations"
       :currentConversationId="currentConversation?.id"
@@ -135,5 +133,6 @@ provide('AppTheme', {
       @toggle-sidebar="toggleSidebar"
       @send-message="handleSendMessage"
     />
+    <ModelPickInit v-else />
   </k-app>
 </template>

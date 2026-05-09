@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, computed } from 'vue';
+import { onMounted, computed, ref } from 'vue';
 import { kBlockTitle, kList, kFab } from 'konsta/vue';
 import { useConversations } from '../composables/useConversations';
 import ModelCard from './ModelCard.vue';
@@ -35,6 +35,7 @@ const availableList = computed(() => {
     });
 });
 
+const openImportModel = ref(false);
 
 onMounted(async () => {
   await checkSubscription()
@@ -47,6 +48,7 @@ onMounted(async () => {
       class="fixed right-safe-4 bottom-safe-4 z-20"
       text="Import Model"
       text-position="after"
+      @click="openImportModel = true"
       ><template #icon>
         <i class="pi pi-plus"></i>
       </template>
@@ -63,5 +65,5 @@ onMounted(async () => {
       <ModelCard v-for="name in availableList" :key="name" :model="availableModels[name]" :modelName="name"/>
     </k-list>
   </template>
-  <ImportModel :openImportModel="false" @close="() => {}" />
+  <ImportModel :openImportModel="openImportModel" @close="openImportModel = false" />
 </template>
