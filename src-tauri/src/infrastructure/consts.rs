@@ -41,17 +41,6 @@ pub fn default_models() -> &'static HashMap<String, Model> {
                 },
             ),
             (
-                "Llama-3.2-3B-Instruct-Q4_K_M.gguf".to_string(),
-                Model {
-                    name: "Llama-3.2-3B-Instruct".to_string(),
-                    repo: "bartowski/Llama-3.2-3B-Instruct-GGUF".to_string(),
-                    size: 2.02 * 1024.0,
-                    is_thinking: false,
-                    params: "3B".to_string(),
-                    is_premium: true,
-                },
-            ),
-            (
                 "SmolLM2-360M-Instruct.Q4_K_M.gguf".to_string(),
                 Model {
                     name: "SmolLM2-360M-Instruct".to_string(),
@@ -81,7 +70,7 @@ pub fn default_models() -> &'static HashMap<String, Model> {
                     size: 1.28 * 1024.0,
                     is_thinking: false,
                     params: "1.7B".to_string(),
-                    is_premium: false,
+                    is_premium: true,
                 },
             ),
             (
@@ -100,10 +89,10 @@ pub fn default_models() -> &'static HashMap<String, Model> {
                 Model {
                     name: "Palymara-Mini-Thinking".to_string(),
                     repo: "QuantFactory/palmyra-mini-thinking-a-GGUF".to_string(),
-                    size: 1.12 * 1024.0,
+                    size: 1.28 * 1024.0,
                     is_thinking: false,
                     params: "1.7B".to_string(),
-                    is_premium: false,
+                    is_premium: true,
                 },
             ),
             (

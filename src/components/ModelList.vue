@@ -12,10 +12,16 @@ const {
   checkSubscription
 } = useConversations();
 
-// NEW: Computed properties for separated and sorted lists
+
+// Helper to check if a model is premium
+function isPremium(model: any) {
+  return model && model.is_premium;
+}
+
+// Downloaded models (non-premium)
 const downloadedList = computed(() => {
   return Object.keys(availableModels.value)
-    .filter(name => downloadedModels.value.includes(name))
+    .filter(name => downloadedModels.value.includes(name) && !isPremium(availableModels.value[name]))
     .sort((a, b) => {
       const contextA = availableModels.value[a]['size' as any] as any || 0;
       const contextB = availableModels.value[b]['size' as any] as any || 0;
@@ -24,9 +30,22 @@ const downloadedList = computed(() => {
     });
 });
 
+// Available models (non-premium)
 const availableList = computed(() => {
   return Object.keys(availableModels.value)
-    .filter(name => !downloadedModels.value.includes(name))
+    .filter(name => !downloadedModels.value.includes(name) && !isPremium(availableModels.value[name]))
+    .sort((a, b) => {
+      const contextA = availableModels.value[a]['size' as any] as any || 0;
+      const contextB = availableModels.value[b]['size' as any] as any || 0;
+      if (contextB !== contextA) return contextA - contextB;
+      return b.localeCompare(a);
+    });
+});
+
+// Premium models (downloaded or available)
+const premiumList = computed(() => {
+  return Object.keys(availableModels.value)
+    .filter(name => isPremium(availableModels.value[name]))
     .sort((a, b) => {
       const contextA = availableModels.value[a]['size' as any] as any || 0;
       const contextB = availableModels.value[b]['size' as any] as any || 0;
@@ -59,11 +78,21 @@ onMounted(async () => {
       <ModelCard v-for="name in downloadedList" :key="name" :model="availableModels[name]" :modelName="name"/>
     </k-list>
   </template>
+
   <template v-if="availableList.length > 0">
-    <k-block-title >Available Models</k-block-title>
+    <k-block-title>Available Models</k-block-title>
     <k-list strong inset dividers>
       <ModelCard v-for="name in availableList" :key="name" :model="availableModels[name]" :modelName="name"/>
     </k-list>
   </template>
+
+  <template v-if="premiumList.length > 0">
+    <k-block-title>Premium Models</k-block-title>
+    <k-list strong inset dividers>
+      <ModelCard v-for="name in premiumList" :key="name" :model="availableModels[name]" :modelName="name"/>
+    </k-list>
+  </template>
   <ImportModel :openImportModel="openImportModel" @close="openImportModel = false" />
+  <!-- Spacer to prevent FAB overlap -->
+  <div class="mb-24"></div>
 </template>
