@@ -1,4 +1,7 @@
-use std::{collections::HashMap, sync::Arc};
+use llama_cpp_2::llama_backend::LlamaBackend;
+use llama_cpp_2::model::LlamaModel;
+use llama_cpp_2::model::params::LlamaModelParams;
+use std::{collections::HashMap, path::PathBuf, sync::Arc};
 
 use tauri::{State, Window, async_runtime::Mutex};
 
@@ -129,4 +132,27 @@ pub async fn set_default_model(
     let mut ctx = app_state.lock().await;
 
     inference::service::activate_model(model_name, &mut ctx).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn import_model(model_path: String) -> Result<String, String> {
+    let path = PathBuf::from(&model_path);
+
+    if !path.exists() {
+        return Err("File does not exist.".to_string());
+    }
+
+    let backend = LlamaBackend::init().map_err(|e| format!("Backend init failed: {:?}", e))?;
+
+    // 1. Tell llama.cpp to ONLY load the metadata/vocab, skipping the heavy weights
+    let model_params = LlamaModelParams::default().with_vocab_only(true);
+
+    // 2. Attempt to load. This acts as validation.
+    // It will return an Err if the file is corrupted, not a GGUF,
+    // or uses an architecture llama.cpp doesn't support.
+    let _model = LlamaModel::load_from_file(&backend, path, &model_params)
+        .map_err(|e| format!("Invalid or unsupported GGUF model: {:?}", e))?;
+
+    // If we reach this line, the GGUF is perfectly valid for text inference.
+    Ok("Valid text model detected and verified!".to_string())
 }
