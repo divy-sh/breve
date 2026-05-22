@@ -15,7 +15,6 @@ fn validate_model(config: &Config, model_name: &str) -> Result<(), String> {
         return Err("Model not downloaded".into());
     }
 
-
     Ok(())
 }
 

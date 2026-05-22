@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use rusqlite::Result;
 
 use crate::infrastructure::database::Database;
@@ -23,4 +25,25 @@ pub fn set_config(name: String, value: String) -> Result<()> {
         rusqlite::params![name, value],
     )?;
     Ok(())
+}
+
+pub fn save_user_model(name: String, path: String) -> Result<()> {
+    let conn = Database::get_db().get_conn();
+    conn.execute(
+        "INSERT INTO user_model (name, path) VALUES (?1, ?2)
+            ON CONFLICT(name) DO UPDATE SET path = excluded.path",
+        rusqlite::params![name, path],
+    )?;
+    Ok(())
+}
+
+pub fn get_user_models() -> Result<HashMap<String, String>> {
+    let conn = Database::get_db().get_conn();
+    let mut stmt = conn.prepare("SELECT value FROM user_model")?;
+    let mut rows = stmt.query([])?;
+    let mut result = HashMap::<String, String>::new();
+    while let Some(row) = rows.next()? {
+        result.insert(row.get(0).unwrap(), row.get(1).unwrap());
+    }
+    Ok(result)
 }

@@ -135,7 +135,7 @@ pub async fn set_default_model(
 }
 
 #[tauri::command]
-pub async fn import_model(model_path: String) -> Result<String, String> {
+pub async fn save_user_model(model_name: String, model_path: String) -> Result<String, String> {
     let path = PathBuf::from(&model_path);
 
     if !path.exists() {
@@ -154,5 +154,6 @@ pub async fn import_model(model_path: String) -> Result<String, String> {
         .map_err(|e| format!("Invalid or unsupported GGUF model: {:?}", e))?;
 
     // If we reach this line, the GGUF is perfectly valid for text inference.
+    _ = infrastructure::service::save_user_model(model_name, model_path);
     Ok("Valid text model detected and verified!".to_string())
 }
