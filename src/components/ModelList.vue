@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, computed, ref } from "vue";
 import { kBlockTitle, kList, kFab } from "konsta/vue";
-import { useConversations } from "../composables/useConversations";
+import { useModels } from "../composables/useModels";
 import ModelCard from "./ModelCard.vue";
 import ImportModel from "./ImportModel.vue";
 
@@ -10,7 +10,7 @@ const {
     downloadedModels,
     refreshVariables,
     checkSubscription,
-} = useConversations();
+} = useModels();
 
 // Helper to check if a model is premium
 function isPremium(model: any) {

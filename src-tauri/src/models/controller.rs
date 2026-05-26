@@ -157,3 +157,10 @@ pub async fn save_user_model(model_name: String, model_path: String) -> Result<S
     _ = infrastructure::service::save_user_model(model_name, model_path);
     Ok("Valid text model detected and verified!".to_string())
 }
+
+#[tauri::command]
+pub async fn get_user_models() -> Result<HashMap<String, String>, String> {
+    let result = infrastructure::service::get_user_models()
+        .map_err(|e| format!("Failed to get user models: {:?}", e))?;
+    Ok(result)
+}

@@ -1,21 +1,14 @@
-import { ref } from 'vue';
+import { ref } from "vue";
 import { invoke } from "@tauri-apps/api/core";
-import type { Conversation, ConversationSummary } from '../types';
-import { useSettings } from './useSettings';
-import { getProductStatus, purchase, PurchaseState } from '@choochmeque/tauri-plugin-iap-api';
+import type { Conversation, ConversationSummary } from "../types";
+import { useSettings } from "./useSettings";
 
 const conversations = ref<ConversationSummary[]>([]);
 const currentConversation = ref<Conversation | null>(null);
-const modelStatus = ref<string>("UNSET");
-const availableModels = ref<Record<string,string>>({});
-const downloadedModels = ref<string[]>([]);
-const defaultModel = ref<string>("");
-const isSubscribed = ref(false);
 
 const { setConfig } = useSettings();
 
 export function useConversations() {
-
   /**
    * Load all conversations from the backend
    */
@@ -23,19 +16,21 @@ export function useConversations() {
     try {
       // Listen for backend download events once (safe to call multiple times; listener will be a no-op if already set)
       // We don't await the listen promise here; update the reactive ref when events arrive.
-      const ids = await invoke("get_conversation_ids") as string[];
+      const ids = (await invoke("get_conversation_ids")) as string[];
       const loadedConversations: ConversationSummary[] = [];
-      
+
       for (const id of ids) {
         const convo = await invoke("get_conversation", { convId: id });
         if (convo) {
           loadedConversations.push({
             id,
-            title: (convo as Conversation).title || `Conversation ${id.substring(0, 8)}`
+            title:
+              (convo as Conversation).title ||
+              `Conversation ${id.substring(0, 8)}`,
           });
         }
       }
-      
+
       conversations.value = loadedConversations;
     } catch (error) {
       console.error("Error loading conversations:", error);
@@ -61,10 +56,10 @@ export function useConversations() {
    */
   async function startNewConversation(message: string) {
     try {
-      const convId = await invoke("start_conversation", {
+      const convId = (await invoke("start_conversation", {
         title: message.substring(0, 30),
-      }) as string;
-      
+      })) as string;
+
       // Load the new conversation after creation
       await loadConversation(convId);
       await loadConversations();
@@ -81,19 +76,22 @@ export function useConversations() {
   async function continueConversation(conversationId: string, message: string) {
     try {
       // Add user message to UI immediately for better responsiveness
-      if (currentConversation.value && currentConversation.value.id === conversationId) {
+      if (
+        currentConversation.value &&
+        currentConversation.value.id === conversationId
+      ) {
         currentConversation.value.body.push({
-          role: 'user',
-          content: message
+          role: "user",
+          content: message,
         });
       }
-      
+
       // Send message to backend
       await invoke("continue_conversation", {
         convId: conversationId,
         userInput: message,
       });
-      
+
       // Wait for streaming to complete and refresh conversation
       await loadConversation(conversationId);
     } catch (error) {
@@ -104,9 +102,9 @@ export function useConversations() {
 
   async function deleteConversation(conversationId: string) {
     try {
-      await invoke("delete_conversation", {
+      (await invoke("delete_conversation", {
         convId: conversationId,
-      }) as string;
+      })) as string;
       if (conversationId === currentConversation.value?.id) {
         currentConversation.value = null;
       }
@@ -117,133 +115,13 @@ export function useConversations() {
     }
   }
 
-  async function downloadModel(modelName?: string) {
-    try {
-      await invoke("download_model", { modelName: modelName });
-    } catch (error) {
-      console.error("Error downloading model: ", error);
-      throw error;
-    }
-  }
-
-  async function getAvailableModels() {
-    try {
-      const res = await invoke("get_available_models") as Record<string, string>;
-      return res;
-    } catch (err) {
-      console.error("Error fetching available models", err);
-      return {};
-    }
-  }
-
-  async function listDownloadedModels() {
-    try {
-      const res = await invoke("list_downloaded_models") as string[];
-      return res.sort();
-    } catch (err) {
-      console.error("Error fetching downloaded models", err);
-      return [] as string[];
-    }
-  }
-
-  async function deleteModel(modelName: string) {
-    try {
-      await invoke("delete_model", { modelName });
-    } catch (err) {
-      console.error("Error deleting model", err);
-      throw err;
-    }
-  }
-
-  async function setDefaultModel(modelName: string) {
-    try {
-      await invoke("set_default_model", { modelName });
-    } catch (err) {
-      console.error("Error setting default model", err);
-      throw err;
-    }
-  }
-
-  async function getDefaultModel() {
-    try {
-      const res = await invoke("get_default_model") as string;
-      return res;
-    } catch (err) {
-      console.error("Error fetching default model", err);
-      return "";
-    }
-  }
-
-    async function getModelStatus() {
-    try {
-      const res = await invoke("get_model_status") as string;
-      return res;
-    } catch (err) {
-      console.error("Error fetching model status", err);
-      return "";
-    }
-  }
-
-  async function abortGeneration() {
-    try {
-      await invoke("abort_generation");
-    } catch (err) {
-      console.error("Error aborting generation", err);
-    }
-  }
-
-  async function refreshVariables() {
-    availableModels.value = await getAvailableModels();
-    downloadedModels.value = await listDownloadedModels();
-    defaultModel.value = await getDefaultModel();
-    modelStatus.value = await getModelStatus();
-  }
-
-  async function checkSubscription() {
-    try {
-      const status = await getProductStatus('breve_monthly_1_99', 'subs');
-      isSubscribed.value = status.isOwned && status.purchaseState === PurchaseState.PURCHASED;
-    } catch (err) {
-      console.error("IAP Check Failed, defaulting to unsubscribed:", err);
-      isSubscribed.value = false; 
-    }
-  }
-
-  async function onSubscribe() {
-    try {
-      const result = await purchase("breve_monthly_1_99", 'subs');
-      if (result.purchaseState === PurchaseState.PURCHASED) {
-        isSubscribed.value = true;
-        await refreshVariables();
-      }
-    } catch (err) {
-
-    }
-  }
-
   return {
     conversations,
     currentConversation,
-    modelStatus,
-    availableModels,
-    downloadedModels,
-    defaultModel,
-    isSubscribed,
     loadConversations,
     loadConversation,
     startNewConversation,
     continueConversation,
     deleteConversation,
-    downloadModel,
-    getAvailableModels,
-    listDownloadedModels,
-    deleteModel,
-    setDefaultModel,
-    getDefaultModel,
-    getModelStatus,
-    abortGeneration,
-    refreshVariables,
-    checkSubscription,
-    onSubscribe,
   };
 }
