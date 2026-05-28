@@ -85,6 +85,16 @@ export function useModels() {
     }
   }
 
+  async function getUserModels() {
+    try {
+      const res = (await invoke("get_user_models")) as Record<string, string>;
+      return res;
+    } catch (err) {
+      console.error("Error fetching user models", err);
+      return {};
+    }
+  }
+
   async function abortGeneration() {
     try {
       await invoke("abort_generation");
@@ -119,6 +129,7 @@ export function useModels() {
     downloadedModels.value = await listDownloadedModels();
     defaultModel.value = await getDefaultModel();
     modelStatus.value = await getModelStatus();
+    userModels.value = await getUserModels();
   }
 
   return {
@@ -126,6 +137,7 @@ export function useModels() {
     availableModels,
     downloadedModels,
     defaultModel,
+    userModels,
     isSubscribed,
     downloadModel,
     getAvailableModels,

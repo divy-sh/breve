@@ -10,6 +10,7 @@ const {
     downloadedModels,
     refreshVariables,
     checkSubscription,
+    userModels,
 } = useModels();
 
 // Helper to check if a model is premium
@@ -122,6 +123,19 @@ onMounted(async () => {
             />
         </k-list>
     </template>
+
+    <template v-if="userModels.value.length > 0">
+        <k-block-title>User Models</k-block-title>
+        <k-list strong inset dividers>
+            <ModelCard
+                v-for="name in userModels"
+                :key="name"
+                :model="availableModels[name]"
+                :modelName="name"
+            />
+        </k-list>
+    </template>
+
     <ImportModel
         :openImportModel="openImportModel"
         @close="openImportModel = false"
