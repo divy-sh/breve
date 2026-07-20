@@ -59,7 +59,7 @@ pub fn default_models() -> &'static HashMap<String, Model> {
                     size: 1.92 * 1024.0,
                     is_thinking: true,
                     params: "3B".to_string(),
-                    is_premium: true,
+                    is_premium: false,
                 },
             ),
             (
@@ -70,7 +70,7 @@ pub fn default_models() -> &'static HashMap<String, Model> {
                     size: 1.28 * 1024.0,
                     is_thinking: false,
                     params: "1.7B".to_string(),
-                    is_premium: true,
+                    is_premium: false,
                 },
             ),
             (
@@ -92,7 +92,7 @@ pub fn default_models() -> &'static HashMap<String, Model> {
                     size: 1.28 * 1024.0,
                     is_thinking: false,
                     params: "1.7B".to_string(),
-                    is_premium: true,
+                    is_premium: false,
                 },
             ),
             (

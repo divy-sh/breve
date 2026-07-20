@@ -46,6 +46,8 @@ pub fn run() {
             models::controller::delete_model,
             models::controller::set_default_model,
             models::controller::get_default_model,
+            models::controller::save_user_model,
+            models::controller::get_user_models,
             infrastructure::controller::get_config,
             infrastructure::controller::set_config,
             configuration::controller::get_model_config,

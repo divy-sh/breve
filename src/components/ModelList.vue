@@ -124,7 +124,7 @@ onMounted(async () => {
         </k-list>
     </template>
 
-    <template v-if="userModels.value.length > 0">
+    <!-- <template v-if="userModels.value.length > 0">
         <k-block-title>User Models</k-block-title>
         <k-list strong inset dividers>
             <ModelCard
@@ -134,7 +134,7 @@ onMounted(async () => {
                 :modelName="name"
             />
         </k-list>
-    </template>
+    </template> -->
 
     <ImportModel
         :openImportModel="openImportModel"
