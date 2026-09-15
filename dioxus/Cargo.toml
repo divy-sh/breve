@@ -1,0 +1,37 @@
+[package]
+name = "breve"
+version = "0.1.0"
+authors = ["div <divyendua@gmail.com>"]
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+dioxus = { version = "0.7.1", features = [] }
+dioxus-primitives = { git = "https://github.com/DioxusLabs/components", version = "0.0.1", default-features = false }
+diffusion-rs = "0.1.18"
+dioxus-icons = { version = "0.1.0", default-features = false }
+tw_merge = "0.1.21"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+llama-cpp-2 = "0.1.143"
+opencl3 = "0.12"
+anyhow = "1.0.100"
+reqwest = { version = "0.11", default-features = false, features = ["blocking", "json", "rustls-tls"] }
+tempfile = "3.6"
+rusqlite = { version = "0.38.0", features = ["bundled"] }
+r2d2 = "0.8.10"
+r2d2_sqlite = "0.32.0"
+uuid = { version = "1.16.0", features = ["v4"] }
+encoding_rs = "0.8.35"
+lucide-dioxus = { version = "3.31.0", features = ["all-icons"] }
+dirs = "6.0"
+
+[features]
+default = ["mobile"]
+# The feature that are only required for the web = ["dioxus/web"] build target should be optional and only enabled in the web = ["dioxus/web"] feature
+web = ["dioxus/web"]
+# The feature that are only required for the desktop = ["dioxus/desktop"] build target should be optional and only enabled in the desktop = ["dioxus/desktop"] feature
+desktop = ["dioxus/desktop"]
+# The feature that are only required for the mobile = ["dioxus/mobile"] build target should be optional and only enabled in the mobile = ["dioxus/mobile"] feature
+mobile = ["dioxus/mobile"]
