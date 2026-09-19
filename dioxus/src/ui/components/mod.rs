@@ -1,9 +1,12 @@
+pub mod avatar;
 pub mod bottom_nav;
+pub mod bubble;
 pub mod button;
 pub mod combobox;
 pub mod image;
 pub mod input;
 pub mod input_group;
 pub mod input_prompt;
+pub mod message;
 pub mod popover;
 pub mod skeleton;
