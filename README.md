@@ -177,3 +177,20 @@ Contributions are welcome! Please open issues and pull requests to help improve 
 
 ## TODO
 1. Fix the model switching issue on model configuration change.
+
+## Features missing in the Dioxus port (vs. the Tauri + Vue version)
+
+The `dioxus/` directory contains a work-in-progress migration of this app from Tauri/Vue to Dioxus. Its Rust `core` was ported in full, but the UI is currently an MVP covering only model download/selection and a single chat conversation. The following features exist in the Tauri + Vue version and are **not yet available** in the Dioxus version:
+
+- **Conversation history / sidebar** — listing past conversations and switching between them (Dioxus only supports a single, current conversation per session)
+- **Deleting a conversation** — backend support exists (`conversation::controller::delete_conversation`), but there's no UI for it yet
+- **Resuming the last active conversation** on app restart (via the persisted `lastConversationId` setting)
+- **Switching models after initial setup** — the Vue app can reopen the model picker from the chat screen at any time; the Dioxus app only shows it once, before a model has been selected
+- **Deleting a downloaded model** — backend support exists (`models::controller::delete_model`), but there's no UI for it yet
+- **Expandable model details** (repo, exact size, "thinking" tag) shown inline per model card
+- **Importing a custom local GGUF model** — backend support exists (`models::controller::save_user_model` / `get_user_models`), but there's no UI for it yet
+- **Model configuration settings screen** (temperature, system prompt, max output length, max context length) — backend support exists (`configuration::controller::get_model_config` / `set_model_config`), but there's no UI for it yet
+- **Persisted dark/light theme preference** — the Dioxus app has a theme toggle, but it doesn't read/write the `darkMode` setting like the Vue app does
+- **Markdown rendering of assistant messages** (code blocks, links, formatting) — Dioxus currently renders message content as plain text
+- **Aborting an in-progress generation** — referenced in the Vue frontend, though not present in Dioxus either
+- **Settings/menu popover in the chat header** (toggle theme, open model picker, open settings) — the Dioxus chat screen has no header/menu yet

@@ -145,13 +145,11 @@ pub fn Chat() -> Element {
                         placeholder: "Write a message...",
                         on_submit: move |_| send_message(input_value()),
                     }
-                    InputPromptFooter {
-                        InputPromptTools {}
-                        InputPromptSubmit {
-                            disabled: input_value().trim().is_empty() || is_loading(),
-                            onclick: move |_| send_message(input_value()),
-                            Send {}
-                        }
+                    InputPromptTools {}
+                    InputPromptSubmit {
+                        disabled: input_value().trim().is_empty() || is_loading(),
+                        onclick: move |_| send_message(input_value()),
+                        Send {}
                     }
                 }
             }
