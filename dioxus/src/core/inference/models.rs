@@ -9,8 +9,8 @@ use std::num::NonZero;
 use std::sync::Arc;
 
 use crate::core::configuration::models::Config;
-use crate::core::conversation::models::Conversation;
 use crate::core::models::models::Model;
+use crate::types::conversation::Conversation;
 
 pub struct Inference {
     model: Arc<LlamaModel>,

@@ -1,27 +1,35 @@
-use crate::core::{
-    conversation::{models::Conversation, service},
-    infrastructure::context::Context,
-};
+use crate::core::{conversation::service, infrastructure::context::Context};
+use crate::types::conversation::Conversation;
 
-pub fn start_conversation(title: String) -> Result<String, String> {
-    service::start_new_conversation(&title).map_err(|e| e.to_string())
+pub fn start_new_conversation(title: &str) -> Result<String, String> {
+    service::start_new_conversation(title).map_err(|e| e.to_string())
 }
 
-/// Continues a conversation, streaming generated tokens to `on_token` as
-/// they're produced.
-///
-/// This performs blocking model inference, so callers should invoke it from
-/// a background thread (e.g. `std::thread::spawn` or
-/// `tokio::task::spawn_blocking`) rather than directly inside a UI event
-/// handler, to avoid blocking rendering.
+/// Fetches all full conversations using `get_conversation_ids` and `get_conversation`
+pub fn get_all_conversations() -> Result<Vec<Conversation>, String> {
+    let ids = service::get_conversation_ids();
+    let mut conversations = Vec::new();
+
+    for id in ids {
+        if let Ok(Some(conv)) = service::get_conversation(&id) {
+            conversations.push(conv);
+        }
+    }
+
+    Ok(conversations)
+}
+
 pub fn continue_conversation(
-    conv_id: String,
+    mut conv_id: String,
     user_input: String,
-    on_token: impl FnMut(&str),
-) -> Result<Option<String>, String> {
+    on_token: impl FnMut(&str) + Send + 'static,
+) -> Result<String, String> {
     let mut ctx = Context::global().lock().map_err(|e| e.to_string())?;
+    if conv_id.is_empty() {
+        conv_id = service::start_new_conversation(&user_input).map_err(|e| e.to_string())?;
+    }
     service::continue_conversation(&conv_id, &user_input, &mut ctx, on_token)
-        .map_err(|e| format!("Inference failed: {:?}", e))
+        .map_err(|e| e.to_string())
 }
 
 pub fn get_conversation_ids() -> Vec<String> {

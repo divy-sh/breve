@@ -9,4 +9,5 @@ pub mod input_group;
 pub mod input_prompt;
 pub mod message;
 pub mod popover;
+pub mod sidenav;
 pub mod skeleton;

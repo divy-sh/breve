@@ -1,9 +1,7 @@
 use std::fmt::Error;
 
-use crate::core::{
-    conversation::models::{Conversation, Message},
-    infrastructure::database::Database,
-};
+use crate::core::infrastructure::database::Database;
+use crate::types::conversation::{Conversation, Message};
 
 use rusqlite::{params, Result};
 

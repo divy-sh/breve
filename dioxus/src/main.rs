@@ -6,6 +6,7 @@ use ui::components::button::Button;
 use ui::panels::app::App;
 
 mod core;
+mod types;
 mod ui;
 
 const FAVICON: Asset = asset!("/assets/favicon.ico");

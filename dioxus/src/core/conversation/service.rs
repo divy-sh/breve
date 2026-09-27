@@ -1,9 +1,9 @@
 use std::fmt::Error;
 use std::vec;
 
-use crate::core::conversation::models::Conversation;
 use crate::core::conversation::repository as dao;
 use crate::core::infrastructure::context::Context;
+use crate::types::conversation::Conversation;
 
 use rusqlite::Result;
 use uuid::Uuid;
@@ -32,29 +32,29 @@ pub fn continue_conversation(
     user_input: &str,
     ctx: &mut Context,
     mut on_token: impl FnMut(&str),
-) -> Result<Option<String>> {
+) -> Result<String> {
     if let Some(mut conversation) = dao::get_conversation(conv_id)? {
         conversation.add_message("user", user_input);
 
         // Ensure inference is available
         let inference = match ctx.inference.as_mut() {
             Some(i) => i,
-            None => return Ok(None),
+            None => return Ok("".to_string()),
         };
 
         match inference.generate_text(&conversation, &mut on_token) {
             Ok(ai_reply) => {
                 conversation.add_message("assistant", &ai_reply);
                 dao::update_conversation(&conversation)?;
-                Ok(Some(ai_reply))
+                Ok(ai_reply)
             }
             Err(e) => {
                 eprintln!("AI generation error: {}", e);
-                Ok(None)
+                Ok("".to_string())
             }
         }
     } else {
-        Ok(None)
+        Ok("".to_string())
     }
 }
 
