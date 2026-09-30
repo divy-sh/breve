@@ -2,7 +2,7 @@ use crate::core::conversation::controller as conv_controller;
 use crate::types::conversation::Conversation;
 use dioxus::prelude::*;
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq)]
 pub struct UseConversation {
     pub current: Signal<Option<Conversation>>,
     pub list: Signal<Vec<Conversation>>,
@@ -59,6 +59,14 @@ pub fn send_message(mut state: UseConversation, text: String) {
     let text = text.trim().to_string();
     if text.is_empty() || state.is_loading() {
         return;
+    }
+
+    if let Some(mut conv) = state.conversation() {
+        conv.body.push(crate::types::conversation::Message {
+            role: "user".to_string(),
+            content: text.clone(),
+        });
+        state.current.set(Some(conv));
     }
 
     state.is_loading.set(true);

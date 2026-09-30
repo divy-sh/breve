@@ -29,8 +29,9 @@ pub fn Chat() -> Element {
     };
 
     rsx! {
-        div { class: "flex flex-col h-screen w-full",
-            div { class: "flex-1 overflow-y-auto p-4 flex flex-col gap-3",
+        // Ensure the root container is constrained properly
+        div { class: "flex flex-col h-full w-full overflow-hidden",
+            div { class: "flex-1 min-h-0 overflow-y-auto p-4 flex flex-col gap-3",
                 if let Some(conv) = conv_state.conversation() {
                     for msg in conv.body {
                         {
@@ -77,7 +78,8 @@ pub fn Chat() -> Element {
                     }
                 }
             }
-            div { class: "p-4 border-t border-border",
+
+            div { class: "p-4 border-t border-border shrink-0",
                 InputPrompt {
                     InputPromptTextarea {
                         value: input_value,
@@ -88,7 +90,7 @@ pub fn Chat() -> Element {
                     InputPromptSubmit {
                         disabled: input_value().trim().is_empty() || conv_state.is_loading(),
                         onclick: move |_| handle_send(),
-                        Send {}
+                        Send { }
                     }
                 }
             }
