@@ -1,7 +1,6 @@
 use dioxus::prelude::*;
 
 use crate::core::models::controller as models_ctrl;
-
 use crate::ui::composables::use_conversation::use_conversation;
 use crate::ui::panels::{home::Home, model_picker::ModelPicker};
 
@@ -11,7 +10,7 @@ pub fn App(theme: Signal<bool>) -> Element {
     let conversation_composable = use_conversation();
 
     rsx! {
-        main { class: "flex-1 overflow-hidden flex flex-col",
+        main { class: "h-screen w-screen overflow-hidden flex flex-col",
             if model_ready() {
                 Home { conversation_composable: conversation_composable, theme: theme }
             } else {

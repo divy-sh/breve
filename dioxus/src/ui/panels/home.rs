@@ -1,26 +1,26 @@
 use dioxus::prelude::*;
-use lucide_dioxus::{Book, Settings};
+use lucide_dioxus::{ArrowDown, Book, Moon, Settings, Sun};
 
+use crate::ui::components::button::Button;
 use crate::ui::components::dialog::{
     Dialog, DialogBody, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader,
     DialogTitle, DialogTrigger,
 };
-use lucide_dioxus::{Moon, Sun};
-
-use crate::ui::components::button::Button;
-
 use crate::ui::composables::use_conversation::UseConversation;
+use crate::ui::composables::use_model::use_model;
 use crate::ui::panels::chat::Chat;
 use crate::ui::panels::model_picker::ModelPicker;
 use crate::ui::panels::top_bar::{TopBar, TopBarLeft, TopBarRight, TopBarTitle};
 
 #[component]
 pub fn Home(conversation_composable: UseConversation, theme: Signal<bool>) -> Element {
+    let model_state = use_model();
+
     rsx! {
         div { class: "flex flex-col h-screen w-full overflow-hidden",
-            TopBar {
+            TopBar { class: "gap-4",
                 // Left side: Chat History Dialog
-                TopBarLeft {
+                TopBarLeft { class: "shrink-0",
                     Dialog {
                         DialogTrigger {
                             Book { class: "w-4 h-4" }
@@ -31,7 +31,9 @@ pub fn Home(conversation_composable: UseConversation, theme: Signal<bool>) -> El
                                 DialogDescription { "Your past conversations will appear here." }
                             }
                             DialogBody {
-                                div { class: "py-4 text-sm text-muted-foreground", "No past conversations found." }
+                                div { class: "py-4 text-sm text-muted-foreground",
+                                    "No past conversations found."
+                                }
                             }
                             DialogFooter {
                                 DialogClose { "Close" }
@@ -40,11 +42,29 @@ pub fn Home(conversation_composable: UseConversation, theme: Signal<bool>) -> El
                     }
                 }
 
-                // Center: Title
-                TopBarTitle { "{conversation_composable.current.read().as_ref().map(|c| c.id.clone()).unwrap_or_default()}" }
+                TopBarTitle { class: "min-w-0 flex-1 flex justify-center",
+                    Dialog { class: "w-full min-w-0",
+                        DialogTrigger { class: "w-full min-w-0",
+                            span { class: "flex-1 min-w-0 truncate text-center",
+                                "{model_state.default_model}"
+                            }
+                            ArrowDown { class: "w-4 h-4 shrink-0" }
+                        }
+                        DialogContent { class: "flex flex-col h-[85vh] overflow-hidden",
+                            DialogHeader {
+                                DialogTitle { "Models" }
+                            }
+                            DialogBody { class: "flex-1 min-h-0 overflow-hidden",
+                                div { class: "flex flex-col flex-1 min-h-0 w-full overflow-hidden",
+                                    ModelPicker { on_model_selected: move |_| {} }
+                                }
+                            }
+                        }
+                    }
+                }
 
                 // Right side: Settings Dialog
-                TopBarRight {
+                TopBarRight { class: "shrink-0",
                     Dialog {
                         DialogTrigger {
                             Settings { class: "w-4 h-4" }
@@ -58,9 +78,14 @@ pub fn Home(conversation_composable: UseConversation, theme: Signal<bool>) -> El
                                 Button {
                                     class: "fixed bottom-4 right-4 z-50 p-2 text-xs font-medium rounded-full border border-border bg-card text-card-foreground shadow-md cursor-pointer hover:bg-muted",
                                     onclick: move |_| theme.toggle(),
-                                    if theme() { Sun {} "Light" } else { Moon {} "Dark" },
+                                    if theme() {
+                                        Sun {}
+                                        "Light"
+                                    } else {
+                                        Moon {}
+                                        "Dark"
+                                    }
                                 }
-                                ModelPicker { on_model_selected: move |_| {} }
                             }
                             DialogFooter {
                                 DialogClose { "Close" }
