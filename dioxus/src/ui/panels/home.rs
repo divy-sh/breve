@@ -3,12 +3,12 @@ use lucide_dioxus::{ArrowDown, Book, Moon, Settings, Sun};
 
 use crate::ui::components::button::Button;
 use crate::ui::components::dialog::{
-    Dialog, DialogBody, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader,
-    DialogTitle, DialogTrigger,
+    Dialog, DialogBody, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger,
 };
 use crate::ui::composables::use_conversation::UseConversation;
 use crate::ui::composables::use_model::use_model;
 use crate::ui::panels::chat::Chat;
+use crate::ui::panels::conversations::Conversations;
 use crate::ui::panels::model_picker::ModelPicker;
 use crate::ui::panels::top_bar::{TopBar, TopBarLeft, TopBarRight, TopBarTitle};
 
@@ -25,18 +25,13 @@ pub fn Home(conversation_composable: UseConversation, theme: Signal<bool>) -> El
                         DialogTrigger {
                             Book { class: "w-4 h-4" }
                         }
-                        DialogContent {
-                            DialogHeader {
+                        DialogContent { class: "flex flex-col overflow-hidden",
+                            DialogHeader { class: "shrink-0",
                                 DialogTitle { "Chat History" }
                                 DialogDescription { "Your past conversations will appear here." }
                             }
-                            DialogBody {
-                                div { class: "py-4 text-sm text-muted-foreground",
-                                    "No past conversations found."
-                                }
-                            }
-                            DialogFooter {
-                                DialogClose { "Close" }
+                            DialogBody { class: "flex-1 min-h-0 overflow-hidden",
+                                Conversations { conversation_composable }
                             }
                         }
                     }
@@ -87,14 +82,11 @@ pub fn Home(conversation_composable: UseConversation, theme: Signal<bool>) -> El
                                     }
                                 }
                             }
-                            DialogFooter {
-                                DialogClose { "Close" }
-                            }
                         }
                     }
                 }
             }
-            Chat {}
+            Chat { conv_state: conversation_composable }
         }
     }
 }

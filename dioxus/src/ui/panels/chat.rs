@@ -1,8 +1,7 @@
 use dioxus::prelude::*;
 use lucide_dioxus::Send;
 
-// Import your custom hook here
-use crate::ui::composables::use_conversation::use_conversation;
+use crate::ui::composables::use_conversation::UseConversation;
 
 use crate::ui::components::{
     avatar::{Avatar, AvatarFallback},
@@ -14,8 +13,7 @@ use crate::ui::components::{
 
 /// A single-conversation chat UI driven by the `use_conversation` hook.
 #[component]
-pub fn Chat() -> Element {
-    let conv_state = use_conversation();
+pub fn Chat(conv_state: UseConversation) -> Element {
     let mut input_value = use_signal(String::new);
 
     let mut handle_send = move || {

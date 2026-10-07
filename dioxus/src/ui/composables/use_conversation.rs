@@ -8,6 +8,8 @@ pub struct UseConversation {
     pub list: Signal<Vec<Conversation>>,
     pub is_loading: Signal<bool>,
     pub streaming: Signal<String>,
+    pub deleting: Signal<Option<String>>,
+    pub error: Signal<Option<String>>,
 }
 
 impl UseConversation {
@@ -23,6 +25,79 @@ impl UseConversation {
         (self.streaming)()
     }
 
+    pub fn new_conversation(&mut self) {
+        self.current.set(None);
+        self.error.set(None);
+    }
+
+    pub fn select_conversation(&mut self, conversation: Conversation) {
+        let id = conversation.id.clone();
+        self.current.set(Some(conversation));
+        self.error.set(None);
+
+        let mut error = self.error;
+        spawn(async move {
+            if let Err(message) =
+                crate::ui::composables::use_settings::set_config("lastConversationId".into(), id)
+                    .await
+            {
+                error.set(Some(format!(
+                    "Could not save selected conversation: {message}"
+                )));
+            }
+        });
+    }
+
+    pub fn delete_conversation(&mut self, id: String) {
+        let deleted_id = id.clone();
+        self.error.set(None);
+        self.deleting.set(Some(id.clone()));
+        let mut state = *self;
+
+        spawn(async move {
+            let result =
+                tokio::task::spawn_blocking(move || conv_controller::delete_conversation(id)).await;
+
+            match result {
+                Ok(Ok(_)) => {
+                    if state
+                        .conversation()
+                        .map_or(false, |current| current.id == deleted_id)
+                    {
+                        state.current.set(None);
+                    }
+
+                    let mut remaining = (state.list)();
+                    remaining.retain(|conversation| conversation.id != deleted_id);
+                    state.list.set(remaining);
+
+                    match tokio::task::spawn_blocking(conv_controller::get_all_conversations).await
+                    {
+                        Ok(Ok(conversations)) => state.list.set(conversations),
+                        Ok(Err(message)) => state.error.set(Some(format!(
+                            "Conversation deleted, but the list could not be refreshed: {message}"
+                        ))),
+                        Err(error) => state.error.set(Some(format!(
+                            "Conversation deleted, but the list could not be refreshed: {error}"
+                        ))),
+                    }
+                }
+                Ok(Err(message)) => {
+                    state
+                        .error
+                        .set(Some(format!("Could not delete conversation: {message}")));
+                }
+                Err(error) => {
+                    state
+                        .error
+                        .set(Some(format!("Could not delete conversation: {error}")));
+                }
+            }
+
+            state.deleting.set(None);
+        });
+    }
+
     pub fn send(&self, text: String) {
         send_message(*self, text);
     }
@@ -33,6 +108,8 @@ pub fn use_conversation() -> UseConversation {
     let mut list = use_signal(Vec::new);
     let is_loading = use_signal(|| false);
     let streaming = use_signal(String::new);
+    let deleting = use_signal(|| None);
+    let error = use_signal(|| None);
 
     // Initial load using get_all_conversations
     use_effect(move || {
@@ -52,6 +129,8 @@ pub fn use_conversation() -> UseConversation {
         list,
         is_loading,
         streaming,
+        deleting,
+        error,
     }
 }
 

@@ -182,10 +182,7 @@ Contributions are welcome! Please open issues and pull requests to help improve 
 
 The `dioxus/` directory contains a work-in-progress migration of this app from Tauri/Vue to Dioxus. Its Rust `core` was ported in full, but the UI is currently an MVP covering only model download/selection and a single chat conversation. The following features exist in the Tauri + Vue version and are **not yet available** in the Dioxus version:
 
-- **Conversation history / sidebar** — listing past conversations and switching between them (Dioxus only supports a single, current conversation per session)
-- **Deleting a conversation** — backend support exists (`conversation::controller::delete_conversation`), but there's no UI for it yet
 - **Resuming the last active conversation** on app restart (via the persisted `lastConversationId` setting)
-- **Switching models after initial setup** — the Vue app can reopen the model picker from the chat screen at any time; the Dioxus app only shows it once, before a model has been selected
 - **Deleting a downloaded model** — backend support exists (`models::controller::delete_model`), but there's no UI for it yet
 - **Expandable model details** (repo, exact size, "thinking" tag) shown inline per model card
 - **Importing a custom local GGUF model** — backend support exists (`models::controller::save_user_model` / `get_user_models`), but there's no UI for it yet
