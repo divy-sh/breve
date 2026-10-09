@@ -28,7 +28,6 @@ pub fn Home(conversation_composable: UseConversation, theme: Signal<bool>) -> El
                         DialogContent { class: "flex flex-col overflow-hidden",
                             DialogHeader { class: "shrink-0",
                                 DialogTitle { "Chat History" }
-                                DialogDescription { "Your past conversations will appear here." }
                             }
                             DialogBody { class: "flex-1 min-h-0 overflow-hidden",
                                 Conversations { conversation_composable }

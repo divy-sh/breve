@@ -4,10 +4,9 @@ use lucide_dioxus::Send;
 use crate::ui::composables::use_conversation::UseConversation;
 
 use crate::ui::components::{
-    avatar::{Avatar, AvatarFallback},
     bubble::{Bubble, BubbleAlign, BubbleContent, BubbleVariant},
     input_prompt::{InputPrompt, InputPromptSubmit, InputPromptTextarea, InputPromptTools},
-    message::{Message, MessageAlign, MessageAvatar, MessageContent},
+    message::{Message, MessageAlign, MessageContent},
     skeleton::Skeleton,
 };
 
@@ -36,12 +35,13 @@ pub fn Chat(conv_state: UseConversation) -> Element {
                             let is_user = msg.role == "user";
                             let align = if is_user { MessageAlign::End } else { MessageAlign::Start };
                             let bubble_align = if is_user { BubbleAlign::End } else { BubbleAlign::Start };
-                            let variant = if is_user { BubbleVariant::Default } else { BubbleVariant::Secondary };
-                            let initials = if is_user { "You" } else { "AI" };
-
+                            let variant = if is_user {
+                                BubbleVariant::Default
+                            } else {
+                                BubbleVariant::Secondary
+                            };
                             rsx! {
                                 Message { align,
-                                    MessageAvatar { Avatar { AvatarFallback { "{initials}" } } }
                                     MessageContent {
                                         Bubble { variant, align: bubble_align,
                                             BubbleContent { "{msg.content}" }
@@ -53,9 +53,10 @@ pub fn Chat(conv_state: UseConversation) -> Element {
                     }
                     if conv_state.is_loading() {
                         Message { align: MessageAlign::Start,
-                            MessageAvatar { Avatar { AvatarFallback { "AI" } } }
                             MessageContent {
-                                Bubble { variant: BubbleVariant::Secondary, align: BubbleAlign::Start,
+                                Bubble {
+                                    variant: BubbleVariant::Secondary,
+                                    align: BubbleAlign::Start,
                                     BubbleContent {
                                         if conv_state.streaming().is_empty() {
                                             Skeleton { class: "h-4 w-24" }
@@ -71,7 +72,9 @@ pub fn Chat(conv_state: UseConversation) -> Element {
                     div { class: "flex flex-1 items-center justify-center text-center",
                         div {
                             p { class: "text-lg font-semibold", "Hello there!" }
-                            p { class: "text-sm text-muted-foreground", "Start a new conversation by typing a message below." }
+                            p { class: "text-sm text-muted-foreground",
+                                "Start a new conversation by typing a message below."
+                            }
                         }
                     }
                 }
@@ -88,7 +91,7 @@ pub fn Chat(conv_state: UseConversation) -> Element {
                     InputPromptSubmit {
                         disabled: input_value().trim().is_empty() || conv_state.is_loading(),
                         onclick: move |_| handle_send(),
-                        Send { }
+                        Send {}
                     }
                 }
             }
