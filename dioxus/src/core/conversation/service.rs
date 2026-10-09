@@ -35,6 +35,7 @@ pub fn continue_conversation(
 ) -> Result<String> {
     if let Some(mut conversation) = dao::get_conversation(conv_id)? {
         conversation.add_message("user", user_input);
+        dao::update_conversation(&conversation)?;
 
         // Ensure inference is available
         let inference = match ctx.inference.as_mut() {

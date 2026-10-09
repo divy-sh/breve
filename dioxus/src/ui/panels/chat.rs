@@ -22,7 +22,7 @@ pub fn Chat(conv_state: UseConversation) -> Element {
         }
 
         input_value.set(String::new());
-        conv_state.send(text);
+        conv_state.send_message(text);
     };
 
     rsx! {
