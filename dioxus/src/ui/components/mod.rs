@@ -1,8 +1,5 @@
-pub mod avatar;
 pub mod bubble;
 pub mod button;
-pub mod button_group;
-pub mod combobox;
 pub mod dialog;
 pub mod image;
 pub mod input;
@@ -11,3 +8,4 @@ pub mod input_prompt;
 pub mod message;
 pub mod separator;
 pub mod skeleton;
+pub mod slider;

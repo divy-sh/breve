@@ -17,7 +17,17 @@ fn main() {
 
 #[component]
 fn Main() -> Element {
-    let mut is_dark = use_signal(|| true);
+    let mut is_dark = use_signal(|| false);
+
+    use_effect(move || {
+        spawn(async move {
+            match ui::composables::use_settings::get_config("darkMode".into()).await {
+                Ok(value) => is_dark.set(value == "true"),
+                Err(message) if message == "Config not found for key darkMode" => {}
+                Err(message) => eprintln!("Could not load theme preference: {message}"),
+            }
+        });
+    });
 
     use_effect(move || {
         let dark_class = if is_dark() { "dark" } else { "" };

@@ -1,15 +1,15 @@
 use dioxus::prelude::*;
-use lucide_dioxus::{ArrowDown, Book, Moon, Settings, Sun};
+use lucide_dioxus::{ArrowDown, Book, Settings as SettingsIcon};
 
-use crate::ui::components::button::Button;
 use crate::ui::components::dialog::{
-    Dialog, DialogBody, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger,
+    Dialog, DialogBody, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
 };
 use crate::ui::composables::use_conversation::UseConversation;
 use crate::ui::composables::use_model::use_model;
 use crate::ui::panels::chat::Chat;
 use crate::ui::panels::conversations::Conversations;
 use crate::ui::panels::model_picker::ModelPicker;
+use crate::ui::panels::settings::Settings;
 use crate::ui::panels::top_bar::{TopBar, TopBarLeft, TopBarRight, TopBarTitle};
 
 #[component]
@@ -61,25 +61,14 @@ pub fn Home(conversation_composable: UseConversation, theme: Signal<bool>) -> El
                 TopBarRight { class: "shrink-0",
                     Dialog {
                         DialogTrigger {
-                            Settings { class: "w-4 h-4" }
+                            SettingsIcon { class: "w-4 h-4" }
                         }
-                        DialogContent {
+                        DialogContent { class: "flex flex-col max-h-[85vh] overflow-hidden",
                             DialogHeader {
                                 DialogTitle { "Settings" }
-                                DialogDescription { "Manage your preferences and configurations." }
                             }
-                            DialogBody {
-                                Button {
-                                    class: "fixed bottom-4 right-4 z-50 p-2 text-xs font-medium rounded-full border border-border bg-card text-card-foreground shadow-md cursor-pointer hover:bg-muted",
-                                    onclick: move |_| theme.toggle(),
-                                    if theme() {
-                                        Sun {}
-                                        "Light"
-                                    } else {
-                                        Moon {}
-                                        "Dark"
-                                    }
-                                }
+                            DialogBody { class: "min-h-0 overflow-y-auto",
+                                Settings { theme }
                             }
                         }
                     }
