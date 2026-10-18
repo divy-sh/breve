@@ -1,3 +1,4 @@
+use dioxus::document::eval;
 use dioxus::prelude::*;
 use lucide_dioxus::Send;
 
@@ -15,6 +16,13 @@ use crate::ui::components::{
 pub fn Chat(conv_state: UseConversation) -> Element {
     let mut input_value = use_signal(String::new);
 
+    use_effect(move || {
+        let _ = conv_state.conversation();
+        let _ = conv_state.is_loading();
+        let _ = conv_state.streaming();
+        eval("document.getElementById('chat-bottom')?.scrollIntoView({ block: 'end' });");
+    });
+
     let mut handle_send = move || {
         let text = input_value().trim().to_string();
         if text.is_empty() || conv_state.is_loading() {
@@ -28,7 +36,7 @@ pub fn Chat(conv_state: UseConversation) -> Element {
     rsx! {
         // Ensure the root container is constrained properly
         div { class: "flex flex-col h-full w-full overflow-hidden",
-            div { class: "flex-1 min-h-0 overflow-y-auto p-4 flex flex-col gap-3",
+            div { class: "flex-1 min-h-0 overflow-y-auto scroll-smooth p-4 flex flex-col gap-3",
                 if let Some(conv) = conv_state.conversation() {
                     for msg in conv.body {
                         {
@@ -78,6 +86,7 @@ pub fn Chat(conv_state: UseConversation) -> Element {
                         }
                     }
                 }
+                div { id: "chat-bottom", class: "shrink-0" }
             }
 
             div { class: "p-4 border-t border-border shrink-0",

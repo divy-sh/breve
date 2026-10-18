@@ -73,6 +73,16 @@ impl UseConversation {
                         .is_some_and(|current| current.id == deleted_id)
                     {
                         state.current.set(None);
+                        if let Err(message) = crate::ui::composables::use_settings::set_config(
+                            "lastConversationId".into(),
+                            String::new(),
+                        )
+                        .await
+                        {
+                            state.error.set(Some(format!(
+                                "Could not clear the last conversation setting: {message}"
+                            )));
+                        }
                     }
                     state
                         .list
@@ -136,6 +146,16 @@ async fn send_message_task(mut state: UseConversation, text: String) {
                     });
                     state.current.set(Some(conversation.clone()));
                     state.upsert_conversation(conversation);
+                    if let Err(message) = crate::ui::composables::use_settings::set_config(
+                        "lastConversationId".into(),
+                        id.clone(),
+                    )
+                    .await
+                    {
+                        state.error.set(Some(format!(
+                            "Could not save the active conversation: {message}"
+                        )));
+                    }
                     id
                 }
                 Err(message) => {
@@ -196,17 +216,64 @@ async fn send_message_task(mut state: UseConversation, text: String) {
 
 pub fn use_conversation() -> UseConversation {
     let current = use_signal(|| None);
-    let mut list = use_signal(Vec::new);
+    let list = use_signal(Vec::new);
     let is_loading = use_signal(|| false);
     let streaming = use_signal(String::new);
     let deleting = use_signal(|| None);
     let error = use_signal(|| None);
 
-    // Initial load using get_all_conversations
     use_effect(move || {
+        let mut state = UseConversation {
+            current,
+            list,
+            is_loading,
+            streaming,
+            deleting,
+            error,
+        };
         spawn(async move {
-            if let Ok(conversations) = run_blocking(conv_controller::get_all_conversations).await {
-                list.set(conversations);
+            match run_blocking(conv_controller::get_all_conversations).await {
+                Ok(conversations) => state.list.set(conversations),
+                Err(message) => state
+                    .error
+                    .set(Some(format!("Could not load conversations: {message}"))),
+            }
+
+            match crate::ui::composables::use_settings::get_config("lastConversationId".into())
+                .await
+            {
+                Ok(id) if !id.is_empty() => {
+                    match run_blocking(move || conv_controller::get_conversation(id.clone())).await
+                    {
+                        Ok(Some(conversation))
+                            if state.conversation().is_none() && !state.is_loading() =>
+                        {
+                            state.current.set(Some(conversation));
+                        }
+                        Ok(Some(_)) => {}
+                        Ok(None) if state.conversation().is_none() && !state.is_loading() => {
+                            if let Err(message) = crate::ui::composables::use_settings::set_config(
+                                "lastConversationId".into(),
+                                String::new(),
+                            )
+                            .await
+                            {
+                                state.error.set(Some(format!(
+                                    "Could not clear the missing last conversation setting: {message}"
+                                )));
+                            }
+                        }
+                        Ok(None) => {}
+                        Err(message) => state.error.set(Some(format!(
+                            "Could not restore the last conversation: {message}"
+                        ))),
+                    }
+                }
+                Ok(_) => {}
+                Err(message) if message == "Config not found for key lastConversationId" => {}
+                Err(message) => state.error.set(Some(format!(
+                    "Could not load the last conversation setting: {message}"
+                ))),
             }
         });
     });
