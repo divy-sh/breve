@@ -9,6 +9,8 @@ pub struct UseModel {
     pub default_model: Signal<String>,
     pub downloading: Signal<HashMap<String, f64>>,
     pub selecting: Signal<Option<String>>,
+    pub deleting: Signal<Option<String>>,
+    pub error: Signal<Option<String>>,
 }
 
 impl UseModel {
@@ -30,6 +32,10 @@ impl UseModel {
 
     pub fn is_selecting(&self, name: &str) -> bool {
         (self.selecting)().as_deref() == Some(name)
+    }
+
+    pub fn is_deleting(&self, name: &str) -> bool {
+        (self.deleting)().as_deref() == Some(name)
     }
 
     pub fn select_model(&self, name: String, on_success: Option<EventHandler<()>>) {
@@ -80,6 +86,34 @@ impl UseModel {
             }
         });
     }
+
+    pub fn delete_model(&self, name: String, on_deleted: EventHandler<()>) {
+        let mut deleting = self.deleting;
+        let mut downloaded = self.downloaded;
+        let mut default_model = self.default_model;
+        let mut error = self.error;
+        let was_default = self.is_default(&name);
+
+        spawn(async move {
+            deleting.set(Some(name.clone()));
+            error.set(None);
+
+            let result = tokio::task::spawn_blocking(move || models_ctrl::delete_model(name)).await;
+            deleting.set(None);
+
+            match result {
+                Ok(Ok(())) => {
+                    downloaded.set(models_ctrl::list_downloaded_models());
+                    default_model.set(models_ctrl::get_default_model());
+                    if was_default {
+                        on_deleted.call(());
+                    }
+                }
+                Ok(Err(message)) => error.set(Some(message)),
+                Err(join_error) => error.set(Some(format!("Failed to delete model: {join_error}"))),
+            }
+        });
+    }
 }
 
 pub fn use_model() -> UseModel {
@@ -96,6 +130,8 @@ pub fn use_model() -> UseModel {
     let default_model = use_signal(models_ctrl::get_default_model);
     let downloading = use_signal(HashMap::new);
     let selecting = use_signal(|| None);
+    let deleting = use_signal(|| None);
+    let error = use_signal(|| None);
 
     UseModel {
         available,
@@ -103,5 +139,7 @@ pub fn use_model() -> UseModel {
         default_model,
         downloading,
         selecting,
+        deleting,
+        error,
     }
 }

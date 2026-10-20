@@ -182,7 +182,6 @@ Contributions are welcome! Please open issues and pull requests to help improve 
 
 The `dioxus/` directory contains a work-in-progress migration of this app from Tauri/Vue to Dioxus. Its Rust `core` was ported in full, and the UI currently covers model download/selection, settings, and a single chat conversation. The following features exist in the Tauri + Vue version and are **not yet available** in the Dioxus version:
 
-- **Deleting a downloaded model** — backend support exists (`models::controller::delete_model`), but there's no UI for it yet
 - **Expandable model details** (repo, exact size, "thinking" tag) shown inline per model card
 - **Importing a custom local GGUF model** — backend support exists (`models::controller::save_user_model` / `get_user_models`), but there's no UI for it yet
 - **Markdown rendering of assistant messages** (code blocks, links, formatting) — Dioxus currently renders message content as plain text

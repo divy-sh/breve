@@ -4,11 +4,11 @@ use lucide_dioxus::{Moon, Sun};
 
 use crate::ui::components::button::{Button, ButtonVariant};
 use crate::ui::components::dialog::{use_dialog_trigger_id, DialogClose};
+use crate::ui::components::separator::Separator;
 use crate::ui::components::slider::Slider;
 use crate::ui::composables::use_settings::{
     get_model_config, set_config, set_model_config, ModelSettings,
 };
-use crate::ui::components::separator::Separator;
 
 #[component]
 pub fn Settings(theme: Signal<bool>) -> Element {

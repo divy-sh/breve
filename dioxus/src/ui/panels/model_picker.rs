@@ -1,11 +1,14 @@
 use dioxus::prelude::*;
-use lucide_dioxus::{Check, Download, LoaderCircle};
+use lucide_dioxus::{Check, Download, LoaderCircle, Trash2};
 
 use crate::ui::components::button::{Button, ButtonSize, ButtonVariant};
 use crate::ui::composables::use_model::use_model;
 
 #[component]
-pub fn ModelPicker(on_model_selected: EventHandler<()>) -> Element {
+pub fn ModelPicker(
+    on_model_selected: EventHandler<()>,
+    on_model_deleted: EventHandler<()>,
+) -> Element {
     let model_state = use_model();
 
     rsx! {
@@ -17,19 +20,25 @@ pub fn ModelPicker(on_model_selected: EventHandler<()>) -> Element {
                     "Download a model to start chatting. Smaller models are faster to download and run; larger models are more capable."
                 }
             }
-            for (name , model) in model_state.available() {
-                {
-                    let is_downloaded = model_state.is_downloaded(&name);
-                    let is_default = model_state.is_default(&name);
-                    let progress = model_state.progress(&name);
-                    let is_selecting = model_state.is_selecting(&name);
+                if let Some(message) = (model_state.error)() {
+                    p { class: "shrink-0 text-sm text-destructive", role: "alert", "{message}" }
+                }
+                for (name , model) in model_state.available() {
+                    {
+                        let is_downloaded = model_state.is_downloaded(&name);
+                        let is_default = model_state.is_default(&name);
+                        let progress = model_state.progress(&name);
+                        let is_selecting = model_state.is_selecting(&name);
+                        let is_deleting = model_state.is_deleting(&name);
 
-                    let name_for_download = name.clone();
-                    let name_for_select = name.clone();
-                    let state_select = model_state;
-                    let state_download = model_state;
+                        let name_for_download = name.clone();
+                        let name_for_select = name.clone();
+                        let name_for_delete = name.clone();
+                        let state_select = model_state;
+                        let state_download = model_state;
+                        let state_delete = model_state;
 
-                    rsx! {
+                        rsx! {
                         div {
                             key: "{name}",
                             class: "flex items-center justify-between gap-3 rounded-md border border-border p-3 shrink-0",
@@ -66,6 +75,7 @@ pub fn ModelPicker(on_model_selected: EventHandler<()>) -> Element {
                                     Button {
                                         variant: ButtonVariant::Outline,
                                         size: ButtonSize::Sm,
+                                        disabled: is_deleting,
                                         onclick: move |_| {
                                             state_select.select_model(name_for_select.clone(), Some(on_model_selected));
                                         },
@@ -80,6 +90,27 @@ pub fn ModelPicker(on_model_selected: EventHandler<()>) -> Element {
                                         },
                                         Download {}
                                         "Download"
+                                    }
+                                }
+                                if is_downloaded {
+                                    Button {
+                                        variant: ButtonVariant::Ghost,
+                                        size: ButtonSize::IconSm,
+                                        class: "text-muted-foreground hover:text-destructive",
+                                        aria_label: "Delete model",
+                                        title: "Delete model",
+                                        disabled: is_deleting || is_selecting || progress.is_some(),
+                                        onclick: move |_| {
+                                            state_delete.delete_model(
+                                                name_for_delete.clone(),
+                                                on_model_deleted,
+                                            );
+                                        },
+                                        if is_deleting {
+                                            LoaderCircle { class: "animate-spin" }
+                                        } else {
+                                            Trash2 {}
+                                        }
                                     }
                                 }
                             }

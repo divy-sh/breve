@@ -13,7 +13,11 @@ use crate::ui::panels::settings::Settings;
 use crate::ui::panels::top_bar::{TopBar, TopBarLeft, TopBarRight, TopBarTitle};
 
 #[component]
-pub fn Home(conversation_composable: UseConversation, theme: Signal<bool>) -> Element {
+pub fn Home(
+    conversation_composable: UseConversation,
+    theme: Signal<bool>,
+    on_model_deleted: EventHandler<()>,
+) -> Element {
     let model_state = use_model();
 
     rsx! {
@@ -50,7 +54,10 @@ pub fn Home(conversation_composable: UseConversation, theme: Signal<bool>) -> El
                             }
                             DialogBody { class: "flex-1 min-h-0 overflow-hidden",
                                 div { class: "flex flex-col flex-1 min-h-0 w-full overflow-hidden",
-                                    ModelPicker { on_model_selected: move |_| {} }
+                                    ModelPicker {
+                                        on_model_selected: move |_| {},
+                                        on_model_deleted,
+                                    }
                                 }
                             }
                         }

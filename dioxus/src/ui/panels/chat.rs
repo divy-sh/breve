@@ -20,7 +20,25 @@ pub fn Chat(conv_state: UseConversation) -> Element {
         let _ = conv_state.conversation();
         let _ = conv_state.is_loading();
         let _ = conv_state.streaming();
-        eval("document.getElementById('chat-bottom')?.scrollIntoView({ block: 'end' });");
+        eval(
+            r#"
+            const container = document.getElementById('chat-messages');
+            if (container) {
+                if (container.dataset.autoScrollInitialized !== 'true') {
+                    container.dataset.autoScrollInitialized = 'true';
+                    container.dataset.following = 'true';
+                    container.addEventListener('scroll', () => {
+                        const distanceFromBottom =
+                            container.scrollHeight - container.scrollTop - container.clientHeight;
+                        container.dataset.following = distanceFromBottom < 80 ? 'true' : 'false';
+                    }, { passive: true });
+                }
+                if (container.dataset.following === 'true') {
+                    container.scrollTop = container.scrollHeight;
+                }
+            }
+            "#,
+        );
     });
 
     let mut handle_send = move || {
@@ -36,7 +54,7 @@ pub fn Chat(conv_state: UseConversation) -> Element {
     rsx! {
         // Ensure the root container is constrained properly
         div { class: "flex flex-col h-full w-full overflow-hidden",
-            div { class: "flex-1 min-h-0 overflow-y-auto scroll-smooth p-4 flex flex-col gap-3",
+            div { id: "chat-messages", class: "flex-1 min-h-0 overflow-y-auto p-4 flex flex-col gap-3",
                 if let Some(conv) = conv_state.conversation() {
                     for msg in conv.body {
                         {

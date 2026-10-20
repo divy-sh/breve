@@ -12,9 +12,16 @@ pub fn App(theme: Signal<bool>) -> Element {
     rsx! {
         main { class: "h-screen w-screen overflow-hidden flex flex-col",
             if model_ready() {
-                Home { conversation_composable: conversation_composable, theme: theme }
+                Home {
+                    conversation_composable: conversation_composable,
+                    theme: theme,
+                    on_model_deleted: move |_| model_ready.set(false),
+                }
             } else {
-                ModelPicker { on_model_selected: move |_| model_ready.set(true) }
+                ModelPicker {
+                    on_model_selected: move |_| model_ready.set(true),
+                    on_model_deleted: move |_| {},
+                }
             }
         }
     }
