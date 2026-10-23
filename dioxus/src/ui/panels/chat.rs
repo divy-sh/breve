@@ -1,5 +1,6 @@
 use dioxus::document::eval;
 use dioxus::prelude::*;
+use dioxus_mdx::MdxContent;
 use lucide_dioxus::Send;
 
 use crate::ui::composables::use_conversation::UseConversation;
@@ -10,6 +11,42 @@ use crate::ui::components::{
     message::{Message, MessageAlign, MessageContent},
     skeleton::Skeleton,
 };
+
+const ASSISTANT_MARKDOWN_CLASS: &str = concat!(
+    "text-sm leading-relaxed break-words ",
+    "[&_p+p]:mt-3 [&_h1]:my-3 [&_h1]:text-2xl [&_h1]:font-semibold ",
+    "[&_h2]:my-3 [&_h2]:text-xl [&_h2]:font-semibold ",
+    "[&_h3]:my-2 [&_h3]:text-lg [&_h3]:font-semibold ",
+    "[&_ul]:my-2 [&_ul]:list-disc [&_ul]:pl-5 ",
+    "[&_ol]:my-2 [&_ol]:list-decimal [&_ol]:pl-5 [&_li]:my-1 ",
+    "[&_blockquote]:my-3 [&_blockquote]:border-l-2 [&_blockquote]:border-border ",
+    "[&_blockquote]:pl-3 [&_blockquote]:text-muted-foreground ",
+    "[&_a]:text-primary [&_a]:underline [&_a]:underline-offset-2 ",
+    "[&_pre]:my-3 [&_pre]:overflow-x-auto [&_pre]:rounded-md [&_pre]:bg-muted [&_pre]:p-3 ",
+    "[&_code]:font-mono [&_code]:text-[0.9em] ",
+    "[&_code:not(pre_code)]:rounded [&_code:not(pre_code)]:bg-muted ",
+    "[&_code:not(pre_code)]:px-1 [&_code:not(pre_code)]:py-0.5 ",
+    "[&_table]:my-3 [&_table]:w-full [&_table]:border-collapse ",
+    "[&_th]:border [&_th]:border-border [&_th]:bg-muted [&_th]:p-2 ",
+    "[&_td]:border [&_td]:border-border [&_td]:p-2 [&_hr]:my-4 ",
+    "[&_.dk-code-block]:my-3 [&_.dk-code-block]:max-w-full ",
+    "[&_.dk-code-block]:overflow-x-auto [&_.dk-code-block]:rounded-lg ",
+    "[&_.dk-code-block]:border [&_.dk-code-block]:border-border [&_.dk-code-block]:bg-muted ",
+    "[&_.dk-code-block-body]:bg-muted ",
+    "[&_.hl-keyword]:text-purple-600 dark:[&_.hl-keyword]:text-purple-300 ",
+    "[&_.hl-string]:text-green-700 dark:[&_.hl-string]:text-green-300 ",
+    "[&_.hl-comment]:text-muted-foreground ",
+    "[&_.hl-number]:text-amber-700 dark:[&_.hl-number]:text-amber-300 ",
+    "[&_.hl-type]:text-blue-700 dark:[&_.hl-type]:text-blue-300 ",
+    "[&_.hl-function]:text-indigo-700 dark:[&_.hl-function]:text-indigo-300"
+);
+
+#[component]
+fn AssistantMarkdown(content: String) -> Element {
+    rsx! {
+        div { class: ASSISTANT_MARKDOWN_CLASS, MdxContent { content } }
+    }
+}
 
 /// A single-conversation chat UI driven by the `use_conversation` hook.
 #[component]
@@ -75,7 +112,13 @@ pub fn Chat(conv_state: UseConversation) -> Element {
                                 Message { align,
                                     MessageContent {
                                         Bubble { variant, align: bubble_align,
-                                            BubbleContent { "{msg.content}" }
+                                            BubbleContent {
+                                                if is_user {
+                                                    "{msg.content}"
+                                                } else {
+                                                    AssistantMarkdown { content: msg.content.clone() }
+                                                }
+                                            }
                                         }
                                     }
                                 }
@@ -92,7 +135,7 @@ pub fn Chat(conv_state: UseConversation) -> Element {
                                         if conv_state.streaming().is_empty() {
                                             Skeleton { class: "h-4 w-24" }
                                         } else {
-                                            "{conv_state.streaming()}"
+                                            AssistantMarkdown { content: conv_state.streaming() }
                                         }
                                     }
                                 }
