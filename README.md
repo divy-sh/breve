@@ -185,4 +185,3 @@ The `dioxus/` directory contains a work-in-progress migration of this app from T
 - **Expandable model details** (repo, exact size, "thinking" tag) shown inline per model card
 - **Importing a custom local GGUF model** — backend support exists (`models::controller::save_user_model` / `get_user_models`), but there's no UI for it yet
 - **Markdown rendering of assistant messages** (code blocks, links, formatting) — Dioxus currently renders message content as plain text
-- **Aborting an in-progress generation** — referenced in the Vue frontend, though not present in Dioxus either

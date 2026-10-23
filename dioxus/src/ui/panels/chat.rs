@@ -30,7 +30,12 @@ pub fn Chat(conv_state: UseConversation) -> Element {
                     container.addEventListener('scroll', () => {
                         const distanceFromBottom =
                             container.scrollHeight - container.scrollTop - container.clientHeight;
-                        container.dataset.following = distanceFromBottom < 80 ? 'true' : 'false';
+                        container.dataset.following = distanceFromBottom < 2 ? 'true' : 'false';
+                    }, { passive: true });
+                    container.addEventListener('wheel', (event) => {
+                        if (event.deltaY < 0) {
+                            container.dataset.following = 'false';
+                        }
                     }, { passive: true });
                 }
                 if (container.dataset.following === 'true') {

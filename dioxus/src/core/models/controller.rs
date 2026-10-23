@@ -1,4 +1,3 @@
-use llama_cpp_2::llama_backend::LlamaBackend;
 use llama_cpp_2::model::params::LlamaModelParams;
 use llama_cpp_2::model::LlamaModel;
 use std::{collections::HashMap, path::PathBuf};
@@ -109,7 +108,8 @@ pub fn save_user_model(model_name: String, model_path: String) -> Result<String,
         return Err("File does not exist.".to_string());
     }
 
-    let backend = LlamaBackend::init().map_err(|e| format!("Backend init failed: {:?}", e))?;
+    let mut ctx = Context::global().lock().map_err(|e| e.to_string())?;
+    ctx.initialize_backend()?;
 
     // 1. Tell llama.cpp to ONLY load the metadata/vocab, skipping the heavy weights
     let model_params = LlamaModelParams::default().with_vocab_only(true);
@@ -117,8 +117,14 @@ pub fn save_user_model(model_name: String, model_path: String) -> Result<String,
     // 2. Attempt to load. This acts as validation.
     // It will return an Err if the file is corrupted, not a GGUF,
     // or uses an architecture llama.cpp doesn't support.
-    let _model = LlamaModel::load_from_file(&backend, path, &model_params)
-        .map_err(|e| format!("Invalid or unsupported GGUF model: {:?}", e))?;
+    let _model = LlamaModel::load_from_file(
+        ctx.backend
+            .as_ref()
+            .expect("backend initialized before model load"),
+        path,
+        &model_params,
+    )
+    .map_err(|e| format!("Invalid or unsupported GGUF model: {:?}", e))?;
 
     // If we reach this line, the GGUF is perfectly valid for text inference.
     _ = infrastructure::service::save_user_model(model_name, model_path);

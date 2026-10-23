@@ -1,5 +1,7 @@
 use std::sync::{Mutex, OnceLock};
 
+use llama_cpp_2::llama_backend::LlamaBackend;
+
 use crate::core::{
     configuration::models::Config, inference::models::Inference, infrastructure::service,
 };
@@ -9,6 +11,7 @@ use crate::core::{
 pub struct Context {
     pub config: Config,
     pub inference: Option<Inference>,
+    pub backend: Option<LlamaBackend>,
 }
 
 impl Context {
@@ -16,7 +19,17 @@ impl Context {
         Context {
             config: Config::init(),
             inference: None,
+            backend: None,
         }
+    }
+
+    pub fn initialize_backend(&mut self) -> Result<(), String> {
+        if self.backend.is_none() {
+            self.backend =
+                Some(LlamaBackend::init().map_err(|e| format!("Backend init failed: {:?}", e))?);
+        }
+
+        Ok(())
     }
 
     /// Returns the shared, lazily-initialized application context.

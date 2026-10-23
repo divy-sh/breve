@@ -20,22 +20,22 @@ fn validate_model(config: &Config, model_name: &str) -> Result<(), String> {
 
 pub fn activate_model(model_name: String, ctx: &mut Context) -> Result<(), String> {
     validate_model(&ctx.config, &model_name)?;
-    // persist
-    infrastructure::service::set_config("model_name".into(), model_name.clone())
+
+    ctx.initialize_backend()?;
+
+    let mut config = ctx.config.clone();
+    config.default_model = model_name.clone();
+    let inference = Inference::init(
+        &config,
+        ctx.backend
+            .as_ref()
+            .expect("backend initialized before model load"),
+    )?;
+
+    infrastructure::service::set_config("model_name".into(), model_name)
         .map_err(|e| e.to_string())?;
 
-    ctx.config.default_model = model_name.clone();
-
-    initialize_inference(ctx);
-
+    ctx.config = config;
+    ctx.inference = Some(inference);
     Ok(())
-}
-
-fn initialize_inference(ctx: &mut Context) {
-    match Inference::init(&ctx.config) {
-        Ok(inference) => {
-            ctx.inference = Some(inference);
-        }
-        Err(e) => eprintln!("Inference init failed: {}", e),
-    }
 }

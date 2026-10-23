@@ -31,12 +31,12 @@ pub fn ModelPicker(
                         let is_selecting = model_state.is_selecting(&name);
                         let is_deleting = model_state.is_deleting(&name);
 
-                        let name_for_download = name.clone();
-                        let name_for_select = name.clone();
+                        let name_for_action = name.clone();
                         let name_for_delete = name.clone();
-                        let state_select = model_state;
-                        let state_download = model_state;
+                        let state_action = model_state;
                         let state_delete = model_state;
+                        let action_disabled =
+                            is_selecting || is_default || progress.is_some() || is_deleting;
 
                         rsx! {
                         div {
@@ -47,70 +47,64 @@ pub fn ModelPicker(
                                 span { class: "text-xs text-muted-foreground", "{model.params} \u{2022} {model.size as u64} MB" }
                             }
                             div { class: "flex items-center gap-2 shrink-0",
-                                if is_selecting {
-                                    Button {
-                                        variant: ButtonVariant::Secondary,
-                                        size: ButtonSize::Sm,
-                                        disabled: true,
+                                Button {
+                                    variant: if is_default || is_selecting || progress.is_some() {
+                                        ButtonVariant::Secondary
+                                    } else if is_downloaded {
+                                        ButtonVariant::Outline
+                                    } else {
+                                        ButtonVariant::Default
+                                    },
+                                    size: ButtonSize::Sm,
+                                    disabled: action_disabled,
+                                    onclick: move |_| {
+                                        if is_downloaded {
+                                            state_action.select_model(
+                                                name_for_action.clone(),
+                                                Some(on_model_selected),
+                                            );
+                                        } else {
+                                            state_action.download_model(name_for_action.clone());
+                                        }
+                                    },
+                                    if is_selecting || progress.is_some() {
                                         LoaderCircle { class: "animate-spin" }
-                                        "Loading..."
-                                    }
-                                } else if is_default {
-                                    Button {
-                                        variant: ButtonVariant::Secondary,
-                                        size: ButtonSize::Sm,
-                                        disabled: true,
+                                        if is_selecting {
+                                            "Loading..."
+                                        } else {
+                                            "{progress.unwrap_or_default() as u64}%"
+                                        }
+                                    } else if is_default {
                                         Check {}
                                         "Selected"
-                                    }
-                                } else if let Some(pct) = progress {
-                                    Button {
-                                        variant: ButtonVariant::Secondary,
-                                        size: ButtonSize::Sm,
-                                        disabled: true,
-                                        LoaderCircle { class: "animate-spin" }
-                                        "{pct as u64}%"
-                                    }
-                                } else if is_downloaded {
-                                    Button {
-                                        variant: ButtonVariant::Outline,
-                                        size: ButtonSize::Sm,
-                                        disabled: is_deleting,
-                                        onclick: move |_| {
-                                            state_select.select_model(name_for_select.clone(), Some(on_model_selected));
-                                        },
+                                    } else if is_downloaded {
                                         "Select"
-                                    }
-                                } else {
-                                    Button {
-                                        variant: ButtonVariant::Default,
-                                        size: ButtonSize::Sm,
-                                        onclick: move |_| {
-                                            state_download.download_model(name_for_download.clone());
-                                        },
+                                    } else {
                                         Download {}
                                         "Download"
                                     }
                                 }
-                                if is_downloaded {
-                                    Button {
-                                        variant: ButtonVariant::Ghost,
-                                        size: ButtonSize::IconSm,
-                                        class: "text-muted-foreground hover:text-destructive",
-                                        aria_label: "Delete model",
-                                        title: "Delete model",
-                                        disabled: is_deleting || is_selecting || progress.is_some(),
-                                        onclick: move |_| {
-                                            state_delete.delete_model(
-                                                name_for_delete.clone(),
-                                                on_model_deleted,
-                                            );
-                                        },
-                                        if is_deleting {
-                                            LoaderCircle { class: "animate-spin" }
-                                        } else {
-                                            Trash2 {}
-                                        }
+                                Button {
+                                    variant: ButtonVariant::Ghost,
+                                    size: ButtonSize::IconSm,
+                                    class: if is_downloaded {
+                                        "text-muted-foreground hover:text-destructive"
+                                    } else {
+                                        "hidden"
+                                    },
+                                    aria_label: "Delete model",
+                                    title: "Delete model",
+                                    disabled: !is_downloaded || is_deleting || is_selecting || progress.is_some(),
+                                    onclick: move |_| {
+                                        state_delete.delete_model(
+                                            name_for_delete.clone(),
+                                            on_model_deleted,
+                                        );
+                                    },
+                                    if is_deleting {
+                                        LoaderCircle { class: "animate-spin" }
+                                    } else {
+                                        Trash2 {}
                                     }
                                 }
                             }

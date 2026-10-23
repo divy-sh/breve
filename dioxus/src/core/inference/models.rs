@@ -13,19 +13,17 @@ use crate::core::models::models::Model;
 use crate::types::conversation::Conversation;
 
 pub struct Inference {
-    model: Arc<LlamaModel>,
     pub ctx: LlamaContext<'static>,
+    model: Arc<LlamaModel>,
     pub model_attrs: Model,
     pub config: Config,
 }
 
 impl Inference {
-    pub fn init(config: &Config) -> Result<Self, String> {
-        let backend =
-            Arc::new(LlamaBackend::init().map_err(|e| format!("Backend init failed: {:?}", e))?);
+    pub fn init(config: &Config, backend: &LlamaBackend) -> Result<Self, String> {
         let model = Arc::new(
             LlamaModel::load_from_file(
-                &backend,
+                backend,
                 config.get_model_path(),
                 &LlamaModelParams::default(),
             )
@@ -40,14 +38,14 @@ impl Inference {
 
         let ctx = unsafe {
             let internal_ctx = model
-                .new_context(&backend, ctx_params)
+                .new_context(backend, ctx_params)
                 .map_err(|e| format!("Session creation error: {:?}", e))?;
             std::mem::transmute::<LlamaContext<'_>, LlamaContext<'static>>(internal_ctx)
         };
 
         Ok(Self {
-            model,
             ctx,
+            model,
 
             model_attrs: config
                 .get_available_models()
