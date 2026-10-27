@@ -36,6 +36,7 @@
     --font-weight-normal: 400;
     --font-weight-medium: 500;
     --font-weight-semibold: 600;
+    --tracking-wide: 0.025em;
     --leading-relaxed: 1.625;
     --radius-sm: 0.25rem;
     --radius-md: 0.375rem;
@@ -304,6 +305,10 @@
   .field-sizing-content {
     field-sizing: content;
   }
+  .size-3 {
+    width: calc(var(--spacing) * 3);
+    height: calc(var(--spacing) * 3);
+  }
   .size-6 {
     width: calc(var(--spacing) * 6);
     height: calc(var(--spacing) * 6);
@@ -443,6 +448,9 @@
   .flex-col-reverse {
     flex-direction: column-reverse;
   }
+  .flex-wrap {
+    flex-wrap: wrap;
+  }
   .items-center {
     align-items: center;
   }
@@ -457,6 +465,9 @@
   }
   .justify-start {
     justify-content: flex-start;
+  }
+  .gap-0\.5 {
+    gap: calc(var(--spacing) * 0.5);
   }
   .gap-1 {
     gap: calc(var(--spacing) * 1);
@@ -541,6 +552,12 @@
   .border-border {
     border-color: var(--color-border);
   }
+  .border-border\/70 {
+    border-color: var(--color-border);
+    @supports (color: color-mix(in lab, red, red)) {
+      border-color: color-mix(in oklab, var(--color-border) 70%, transparent);
+    }
+  }
   .border-input {
     border-color: var(--color-input);
   }
@@ -552,6 +569,12 @@
   }
   .bg-background {
     background-color: var(--color-background);
+  }
+  .bg-background\/60 {
+    background-color: var(--color-background);
+    @supports (color: color-mix(in lab, red, red)) {
+      background-color: color-mix(in oklab, var(--color-background) 60%, transparent);
+    }
   }
   .bg-black\/50 {
     background-color: color-mix(in srgb, #000 50%, transparent);
@@ -567,6 +590,12 @@
   }
   .bg-muted {
     background-color: var(--color-muted);
+  }
+  .bg-muted\/50 {
+    background-color: var(--color-muted);
+    @supports (color: color-mix(in lab, red, red)) {
+      background-color: color-mix(in oklab, var(--color-muted) 50%, transparent);
+    }
   }
   .bg-primary {
     background-color: var(--color-primary);
@@ -594,6 +623,9 @@
   }
   .p-6 {
     padding: calc(var(--spacing) * 6);
+  }
+  .px-1 {
+    padding-inline: calc(var(--spacing) * 1);
   }
   .px-1\.5 {
     padding-inline: calc(var(--spacing) * 1.5);
@@ -625,6 +657,9 @@
   .py-2 {
     padding-block: calc(var(--spacing) * 2);
   }
+  .py-2\.5 {
+    padding-block: calc(var(--spacing) * 2.5);
+  }
   .py-3 {
     padding-block: calc(var(--spacing) * 3);
   }
@@ -643,6 +678,9 @@
   .text-center {
     text-align: center;
   }
+  .font-mono {
+    font-family: var(--font-mono);
+  }
   .text-base {
     font-size: var(--text-base);
     line-height: var(--tw-leading, var(--text-base--line-height));
@@ -658,6 +696,9 @@
   .text-xs {
     font-size: var(--text-xs);
     line-height: var(--tw-leading, var(--text-xs--line-height));
+  }
+  .text-\[10px\] {
+    font-size: 10px;
   }
   .leading-none {
     --tw-leading: 1;
@@ -679,11 +720,18 @@
     --tw-font-weight: var(--font-weight-semibold);
     font-weight: var(--font-weight-semibold);
   }
+  .tracking-wide {
+    --tw-tracking: var(--tracking-wide);
+    letter-spacing: var(--tracking-wide);
+  }
   .break-words {
     overflow-wrap: break-word;
   }
   .wrap-break-word {
     overflow-wrap: break-word;
+  }
+  .break-all {
+    word-break: break-all;
   }
   .whitespace-nowrap {
     white-space: nowrap;
@@ -693,6 +741,12 @@
   }
   .text-foreground {
     color: var(--color-foreground);
+  }
+  .text-foreground\/80 {
+    color: var(--color-foreground);
+    @supports (color: color-mix(in lab, red, red)) {
+      color: color-mix(in oklab, var(--color-foreground) 80%, transparent);
+    }
   }
   .text-muted-foreground {
     color: var(--color-muted-foreground);
@@ -708,6 +762,9 @@
   }
   .text-white {
     color: var(--color-white);
+  }
+  .uppercase {
+    text-transform: uppercase;
   }
   .underline-offset-4 {
     text-underline-offset: 4px;
@@ -866,6 +923,13 @@
     &:hover {
       @media (hover: hover) {
         color: var(--color-destructive);
+      }
+    }
+  }
+  .hover\:text-foreground {
+    &:hover {
+      @media (hover: hover) {
+        color: var(--color-foreground);
       }
     }
   }
@@ -1868,6 +1932,10 @@
   syntax: "*";
   inherits: false;
 }
+@property --tw-tracking {
+  syntax: "*";
+  inherits: false;
+}
 @property --tw-shadow {
   syntax: "*";
   inherits: false;
@@ -1971,6 +2039,7 @@
       --tw-border-style: solid;
       --tw-leading: initial;
       --tw-font-weight: initial;
+      --tw-tracking: initial;
       --tw-shadow: 0 0 #0000;
       --tw-shadow-color: initial;
       --tw-shadow-alpha: 100%;
