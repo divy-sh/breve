@@ -1,0 +1,92 @@
+@import "tailwindcss";
+
+@source "./src/**/*.{rs,html,css}";
+
+/* Tell Tailwind v4 to look for the .dark class on parent elements */
+@variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  /* Gritty, industrial grayscale gradients */
+  --gradient-brand: linear-gradient(135deg, #3f3f46 0%, #18181b 100%);
+  --gradient-subtle: linear-gradient(180deg, rgba(113, 113, 122, 0.08) 0%, rgba(24, 24, 27, 0.02) 100%);
+}
+
+/* Light Theme (Washed-out industrial gray) */
+:root {
+  --background: hsl(220 14% 96%);
+  --foreground: hsl(240 5.3% 26.1%);
+  --card: hsl(0 0% 100%);
+  --card-foreground: hsl(240 5.3% 26.1%);
+  --popover: hsl(0 0% 100%);
+  --popover-foreground: hsl(240 5.3% 26.1%);
+  --primary: hsl(240 5.9% 10%);
+  --primary-foreground: hsl(0 0% 98%);
+  --secondary: hsl(240 4.8% 90%);
+  --secondary-foreground: hsl(240 5.9% 10%);
+  --muted: hsl(240 4.8% 90%);
+  --muted-foreground: hsl(240 3.8% 40%);
+  --accent: hsl(240 4.8% 90%);
+  --accent-foreground: hsl(240 5.9% 10%);
+  --destructive: hsl(0 84.2% 60.2%);
+  --destructive-foreground: hsl(210 40% 98%);
+  --border: hsl(240 5.9% 82%);
+  --input: hsl(240 5.9% 82%);
+  --ring: hsl(240 5.9% 10%);
+}
+
+/* Dark Theme (Grimy, heavy dark-zinc and concrete gray) */
+.dark {
+  --background: hsl(240 6% 10%);
+  --foreground: hsl(240 5% 84%);
+  --card: hsl(240 6% 13%);
+  --card-foreground: hsl(240 5% 84%);
+  --popover: hsl(240 6% 13%);
+  --popover-foreground: hsl(240 5% 84%);
+  --primary: hsl(0 0% 98%);
+  --primary-foreground: hsl(240 6% 10%);
+  --secondary: hsl(240 5% 18%);
+  --secondary-foreground: hsl(240 5% 84%);
+  --muted: hsl(240 5% 18%);
+  --muted-foreground: hsl(240 4% 56%);
+  --accent: hsl(240 5% 22%);
+  --accent-foreground: hsl(0 0% 98%);
+  --destructive: hsl(0 62.8% 30.6%);
+  --destructive-foreground: hsl(0 0% 98%);
+  --border: hsl(240 4% 20%);
+  --input: hsl(240 4% 20%);
+  --ring: hsl(240 5% 84%);
+}
+
+/* Base application rules */
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+  html {
+    overscroll-behavior: none;
+  }
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+  }
+}
