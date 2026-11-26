@@ -52,6 +52,64 @@ dx serve --macos
 
 You can also use the Dioxus CLI for other targets depending on your platform and setup.
 
+## Android release (Google Play)
+
+### Prerequisites
+
+- Rust stable and Dioxus CLI 0.7.10, matching the Dioxus version resolved in `Cargo.lock`:
+
+```bash
+cargo install dioxus-cli --version 0.7.10 --locked
+```
+
+- Android Studio with Android SDK Platform 36, Android SDK Build-Tools, Android SDK Command-line Tools, NDK (Side by side), and CMake installed
+- Java 17 (Android Studio's bundled runtime works)
+- The Rust Android targets:
+
+```bash
+rustup target add aarch64-linux-android armv7-linux-androideabi i686-linux-android x86_64-linux-android
+```
+
+On macOS, set the Android environment variables in the shell used to build (adjust the NDK version to the one installed by Android Studio):
+
+```bash
+export JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"
+export ANDROID_HOME="$HOME/Library/Android/sdk"
+export ANDROID_SDK_ROOT="$ANDROID_HOME"
+export NDK_HOME="$ANDROID_HOME/ndk/<installed-ndk-version>"
+export PATH="$PATH:$ANDROID_HOME/platform-tools:$ANDROID_HOME/cmdline-tools/latest/bin"
+```
+
+### Build the Play Store bundle
+
+From the repository root, build a release Android App Bundle:
+
+```bash
+dx bundle --platform android --release --package-types aab --out-dir dist/android
+```
+
+The Android App Bundle will be written to `dist/android/Breve-aarch64-linux-android.aab`. The app's Android application ID is `com.breve.ai`; it is configured in `Dioxus.toml`. Keep this ID stable after publishing, because Google Play treats a different ID as a different app.
+
+### Sign the bundle with your upload key
+
+Dioxus produces an unsigned release bundle, so signing it is a separate required step. Do not add your keystore or passwords to the repository. Keep the keystore backed up securely and outside version control. To sign the generated bundle, use the alias in your existing keystore; `jarsigner` prompts for passwords if they are not supplied:
+
+```bash
+jarsigner -keystore /secure/path/to/upload-key.jks \
+  -signedjar dist/android/Breve-release.aab \
+  dist/android/Breve-aarch64-linux-android.aab YOUR_KEY_ALIAS
+```
+
+Verify the signed output before uploading:
+
+```bash
+jarsigner -verify -verbose -certs dist/android/Breve-release.aab
+```
+
+Upload `Breve-release.aab` in the Google Play Console. For a new Play app, enroll in Play App Signing and use the key designated as the **upload key** to sign uploads; Google Play manages the app-signing key used for delivery. For an existing app, use its registered upload key. Do not use `apksigner` to sign an `.aab`; it is for APK files.
+
+For a locally installable APK instead of a Play upload, build with `--package-types apk`. APK signing and installation are separate from the Play App Bundle flow above.
+
 ## Project Structure
 
 ```text

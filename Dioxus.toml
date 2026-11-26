@@ -1,4 +1,5 @@
 [application]
+name = "Breve"
 
 [web.app]
 
@@ -19,3 +20,9 @@ script = []
 # Javascript code file
 # serve: [dev-server] only
 script = []
+
+[android]
+identifier = "com.breve.ai"
+min_sdk = 24
+compile_sdk = 36
+target_sdk = 36
